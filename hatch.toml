@@ -1,0 +1,5 @@
+[build.targets.wheel]
+packages = [ "src" ]
+
+[build.targets.sdist]
+include = [ "src" ]
