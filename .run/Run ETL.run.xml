@@ -1,0 +1,6 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Run ETL" type="insyncwithfoo.ryecharm.uv" factoryName="insyncwithfoo.ryecharm.uv.projectscript">
+    <option name="scriptName" value="etl" />
+    <method v="2" />
+  </configuration>
+</component>
