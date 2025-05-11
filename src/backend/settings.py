@@ -39,7 +39,9 @@ ROOT_URLCONF = 'src.backend.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            "src/frontend/templates/"
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -81,15 +83,22 @@ AUTH_PASSWORD_VALIDATORS = [
 LANGUAGE_CODE = 'sr-rs'
 USE_I18N = False
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
-STATIC_URL = '/static/'
-STATIC_ROOT = path.join('temp/static')
+STATIC_URL = 'static/'
+STATIC_ROOT = path.join('.temp/static')
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 PLOTLY_DASH = {
-    "view_decorator": "django_plotly_dash.access.login_required",
+    "view_decorator": None,
+    "stateless_loader": "src.frontend",
 }
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+CSRF_TRUSTED_ORIGINS = ["http://localhost:8000", "http://0.0.0.0:8000"]
+STATICFILES_FINDERS = [
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+]
 

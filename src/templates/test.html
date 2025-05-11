@@ -1,9 +1,0 @@
-{% extends "base.html" %}
-{% load plotly_dash %}
-
-{% block content %}
-    <h1>Django Plotly Dash Example</h1>
-    <div class="{% plotly_class name='ExampleDashApp' %}">
-        {% plotly_app name='ExampleDashApp' %}
-    </div>
-{% endblock %}
