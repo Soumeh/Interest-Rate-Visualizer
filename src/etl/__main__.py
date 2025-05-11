@@ -1,18 +1,20 @@
 import os
-import asyncio
 from hashlib import md5
 from pathlib import Path
 
 import pandas
-from sqlalchemy import text
-from sqlalchemy.ext.asyncio import create_async_engine
-from dotenv import load_dotenv
 import requests
+import sqlalchemy
+from dotenv import load_dotenv
+from sqlalchemy.orm import Session
+
+from src.db import Base
+from src.db.models import ConsumerInterestRates
 
 load_dotenv()
 
 def get_cached_data(url, sheet_name: str | int = 0, cache_dir: str = ".temp/excel/", force_download: bool = False):
-    """Download Excel file with caching"""
+    """Download an Excel file with caching"""
     cache_dir = Path(cache_dir)
     cache_dir.mkdir(exist_ok=True)
 
@@ -27,52 +29,26 @@ def get_cached_data(url, sheet_name: str | int = 0, cache_dir: str = ".temp/exce
         with open(cache_path, 'wb') as f:
             f.write(response.content)
 
-    return pandas.read_excel(cache_path, sheet_name=sheet_name, na_values=['-'])
+    return pandas.read_excel(cache_path, sheet_name=sheet_name, na_values=['-', ' ', '', ' -', '- '], header=None)
 
 excel_url = 'https://www.nbs.rs/export/sites/NBS_site/documents/statistika/monetarni_sektor/SBMS_ks_3.xls'
-excel = get_cached_data(excel_url, 3)
-
-
-
-
-# async def main() -> None:
-
-    # Download the file
-    # response = requests.get(excel_url)
-    # excel_data = BytesIO(response.content)
-
-    # Read the Excel file into a DataFrame
-    # df = pd.read_excel(excel_data, sheet_name=sheet_name)
-    # df = pd.read_excel(excel_data)
-
-    # Display the first few rows to verify
-    # print("Data from Excel URL:")
-    # print(df.head())
-
-    # engine = create_async_engine(os.getenv("DATABASE_URL"))
-    # async with engine.connect() as connection:
-    #     result = await connection.execute(text("select 'hello world'"))
-    #     print(result.fetchall())
-    # await engine.dispose()
-
-    # 3. Export to database
-    # table_name = 'excel_data'  # Your table name
-    # if_exists = 'replace'  # 'replace', 'append', or 'fail'
-
-    # Write DataFrame to SQL database
-    # df.to_sql(
-        # name=table_name,
-        # con=engine,
-        # if_exists=if_exists,
-        # index=False  # Set to True if you want to write row indices
-    # )
-
-    # print(f"Data successfully exported to {table_name} table in database")
-
-# asyncio.run(main())
+excel = get_cached_data(excel_url, "Weighted IR on loans-New Bus.")
+engine = sqlalchemy.create_engine(os.getenv("DATABASE_URL"))
 
 def main():
-    print(excel.iat[0, 0])
+    Base.metadata.create_all(engine)
+
+    test = excel.iloc[11:-5, 0:14]
+
+    with Session(engine) as session:
+        for index, row in test.iterrows():
+            try:
+                rate = ConsumerInterestRates.from_row(row)
+                session.add(rate)
+            except Exception as e:
+                print(f"Error processing row {index}: {e}")
+        session.commit()
+
 
 if __name__ == '__main__':
     main()
