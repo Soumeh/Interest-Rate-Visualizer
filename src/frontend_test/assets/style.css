@@ -1,0 +1,22 @@
+/* Global Styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.year-dropdown {
+    width: 50%;
+    margin: 0 auto;
+    margin-bottom: 20px;
+}
+
+.graph-container {
+    margin-top: 20px;
+}
