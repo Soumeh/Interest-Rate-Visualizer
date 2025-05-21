@@ -1,19 +1,19 @@
 import os
 from hashlib import md5
 from pathlib import Path
+from typing import Callable
 
 import pandas
 import requests
 import sqlalchemy
 from dotenv import load_dotenv
-from sqlalchemy.orm import Session
+from narwhals import DataFrame
 
-from src.db import Base
-from src.db.models import ConsumerInterestRates
+from src.etl.processors import *  # noqa: F403
 
 load_dotenv()
 
-def get_cached_data(url, sheet_name: str | int = 0, cache_dir: str = ".temp/excel/", force_download: bool = False):
+def get_cached_data(url, sheet_name: str | int = 0, cache_dir: str = ".temp/excel/", force_download: bool = False) -> DataFrame:
     """Download an Excel file with caching"""
     cache_dir = Path(cache_dir)
     cache_dir.mkdir(exist_ok=True)
@@ -31,24 +31,28 @@ def get_cached_data(url, sheet_name: str | int = 0, cache_dir: str = ".temp/exce
 
     return pandas.read_excel(cache_path, sheet_name=sheet_name, na_values=['-', ' ', '', ' -', '- '], header=None)
 
-excel_url = 'https://www.nbs.rs/export/sites/NBS_site/documents/statistika/monetarni_sektor/SBMS_ks_3.xls'
-excel = get_cached_data(excel_url, "Weighted IR on loans-New Bus.")
 engine = sqlalchemy.create_engine(os.getenv("DATABASE_URL"))
+
+def process_file(url: str, sheet_name: str, frame_consumer: Callable):
+    frame: DataFrame = get_cached_data(url, sheet_name)
+    with Session(engine) as session:
+        frame_consumer(session, frame)
+        session.commit()
 
 def main():
     Base.metadata.create_all(engine)
-
-    test = excel.iloc[11:-5, 0:14]
-
     with Session(engine) as session:
-        for index, row in test.iterrows():
-            try:
-                rate = ConsumerInterestRates.from_row(row)
-                session.add(rate)
-            except Exception as e:
-                print(f"Error processing row {index}: {e}")
+        process_file(
+            "https://www.nbs.rs/export/sites/NBS_site/documents/statistika/monetarni_sektor/SBMS_ks_3.xls",
+            "Weighted IR on loans-New Bus.",
+            process_population_interest_rates,
+        )
+        process_file(
+            "https://www.nbs.rs/export/sites/NBS_site/documents/statistika/monetarni_sektor/SBMS_ks_3.xls",
+            "Volume on loans-New Bus.",
+            process_population_loans,
+        )
         session.commit()
-
 
 if __name__ == '__main__':
     main()
