@@ -9,6 +9,7 @@ import sqlalchemy
 from dotenv import load_dotenv
 from narwhals import DataFrame
 
+from src.db.models import Base
 from src.etl.processors import *  # noqa: F403
 
 load_dotenv()

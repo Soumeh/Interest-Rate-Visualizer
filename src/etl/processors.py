@@ -3,10 +3,9 @@ from pandas import DataFrame, Series
 from sqlalchemy.orm import Session
 
 from src.common.test import month_to_integer
-from src.db.models.interest_rates import * # noqa: F403
-from src.db.models.loans import * # noqa: F403
+from src.db.models import BankingData, BankingDataType, HouseholdInterestRates, HouseholdLoans
 
-def process_table(session: Session, date_frame: DataFrame, table_frame: DataFrame, table_type: type[GenericData]):
+def process_table(session: Session, date_frame: DataFrame, table_frame: DataFrame, table_type: type[BankingData], data_type: BankingDataType):
     previous_year = None
     index: int = 0
     for i, row in table_frame.iterrows():
@@ -21,8 +20,8 @@ def process_table(session: Session, date_frame: DataFrame, table_frame: DataFram
                 previous_year = year
             month = month_to_integer(date.iloc[1])
 
-            rate = table_type.from_row(year, month, row)
-            exists = session.query(table_type).filter_by(year=rate.year, month=rate.month).scalar() is not None
+            rate = table_type.from_row(data_type, year, month, row)
+            exists = session.query(table_type).filter_by(data_type=rate.data_type, year=rate.year, month=rate.month).scalar() is not None
             if not exists:
                 session.add(rate)
         except Exception as exception:
@@ -33,35 +32,35 @@ def process_population_interest_rates(session: Session, frame: DataFrame):
 
     total_interest_rates_data = frame.iloc[11:-5, 2:14]
     total_interest_rates_data[14] = Series()
-    process_table(session, date_frame, total_interest_rates_data, TotalInterestRates)
+    process_table(session, date_frame, total_interest_rates_data, HouseholdInterestRates, BankingDataType.TOTAL)
 
     housing_interest_rates_data = frame.iloc[11:-5, 14:27]
-    process_table(session, date_frame, housing_interest_rates_data, HousingInterestRates)
+    process_table(session, date_frame, housing_interest_rates_data, HouseholdInterestRates, BankingDataType.HOUSING)
 
     consumer_interest_rates_data = frame.iloc[11:-5, 27:40]
-    process_table(session, date_frame, consumer_interest_rates_data, ConsumerInterestRates)
+    process_table(session, date_frame, consumer_interest_rates_data, HouseholdInterestRates, BankingDataType.CONSUMER)
 
     cash_interest_rates_data = frame.iloc[11:-5, 40:53]
-    process_table(session, date_frame, cash_interest_rates_data, CashInterestRates)
+    process_table(session, date_frame, cash_interest_rates_data, HouseholdInterestRates, BankingDataType.CASH)
 
     other_interest_rates_data = frame.iloc[11:-5, 53:66]
-    process_table(session, date_frame, other_interest_rates_data, OtherInterestRates)
+    process_table(session, date_frame, other_interest_rates_data, HouseholdInterestRates, BankingDataType.OTHER)
 
 def process_population_loans(session: Session, frame: DataFrame):
     date_frame: DataFrame = frame.iloc[11:-5, 0:2]
 
     total_loans_data = frame.iloc[11:-5, 2:14]
     total_loans_data[14] = Series()
-    process_table(session, date_frame, total_loans_data, TotalLoans)
+    process_table(session, date_frame, total_loans_data, HouseholdLoans, BankingDataType.TOTAL)
 
     housing_loans_data = frame.iloc[11:-5, 14:27]
-    process_table(session, date_frame, housing_loans_data, HousingLoans)
+    process_table(session, date_frame, housing_loans_data, HouseholdLoans, BankingDataType.HOUSING)
 
     consumer_loans_data = frame.iloc[11:-5, 27:40]
-    process_table(session, date_frame, consumer_loans_data, ConsumerLoans)
+    process_table(session, date_frame, consumer_loans_data, HouseholdLoans, BankingDataType.CONSUMER)
 
     cash_loans_data = frame.iloc[11:-5, 40:53]
-    process_table(session, date_frame, cash_loans_data, CashLoans)
+    process_table(session, date_frame, cash_loans_data, HouseholdLoans, BankingDataType.CASH)
 
     other_loans_data = frame.iloc[11:-5, 53:66]
-    process_table(session, date_frame, other_loans_data, OtherLoans)
+    process_table(session, date_frame, other_loans_data, HouseholdLoans, BankingDataType.OTHER)

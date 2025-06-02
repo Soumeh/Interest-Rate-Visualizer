@@ -4,7 +4,7 @@ https://docs.djangoproject.com/en/5.2/topics/http/urls/
 
 from django.contrib import admin
 from django.urls import path
-from src.frontend import views
+from src.frontend_old import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),

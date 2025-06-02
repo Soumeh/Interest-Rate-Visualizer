@@ -1,271 +1,90 @@
-import dash
-from dash import dcc, html, callback, Output, Input
-import plotly.express as px
-import plotly.graph_objects as go
-import pandas as pd
-from datetime import datetime, timedelta
-from django_plotly_dash import DjangoDash
-from .fake_db import fake_db
+from dash import Dash, html, dcc, Output, Input
 
-# Create a DjangoDash application
-app = DjangoDash('ExampleDashApp')
+from src.common import month_names
+from src.frontend import GRAPH_TYPE_TRANSLATIONS, total_household_interest_rates, GRAPH_TYPE_FUNCTIONS
 
-# Get data from our fake database
-products = fake_db.get_products()
-regions = fake_db.get_regions()
+app = Dash(__name__, assets_folder='assets')
 
-# Default date range (last 30 days)
-end_date = datetime.now().date()
-start_date = end_date - timedelta(days=30)
 
-# Define the app layout with interactive components
+app.clientside_callback(
+    "window.dash_clientside.theme.toggleTheme",
+    Output('theme-store', 'data'),
+    Input('theme-store', 'data'),
+    Input('theme-toggle', 'n_clicks')
+)
+
+
 app.layout = html.Div([
+    html.H1(children='Banka aplikacija'),
+    # html.Div([
+    #     html.Label('Izaberite tip grafa:'),
+    #     dcc.Dropdown(
+    #         options=[{'label': label, 'value': value} for value, label in graph_types.items()],
+    #         value=None,
+    #         id='test-dropdown'
+    #     )
+    # ], className='dropdown-container'),
+
+    # Controls container
     html.Div([
-        html.H1('Sales Dashboard'),
-        html.P('Analyze product sales across regions and time periods'),
-    ], style={'textAlign': 'center', 'marginBottom': '30px'}),
-    
-    html.Div([
+        # Year dropdown
         html.Div([
-            html.Label('Date Range:'),
-            dcc.DatePickerRange(
-                id='date-picker-range',
-                start_date=start_date,
-                end_date=end_date,
-                display_format='YYYY-MM-DD'
-            ),
-        ], style={'width': '48%', 'display': 'inline-block'}),
-        
+            html.Label('Izaberite godinu:'),
+            dcc.Dropdown(total_household_interest_rates.year.unique(), value=None, id='year-dropdown')
+        ], className='dropdown-container'),
+
+        # Graph type dropdown
         html.Div([
-            html.Label('Products:'),
+            html.Label('Izaberite opcije grafa:'),
             dcc.Dropdown(
-                id='product-dropdown',
-                options=[{'label': product, 'value': product} for product in products],
-                multi=True,
-                placeholder='Select products...'
-            ),
-        ], style={'width': '48%', 'display': 'inline-block', 'float': 'right'}),
-    ], style={'marginBottom': '20px'}),
-    
-    html.Div([
-        html.Label('Regions:'),
-        dcc.Checklist(
-            id='region-checklist',
-            options=[{'label': region, 'value': region} for region in regions],
-            value=regions,  # Default to all regions selected
-            inline=True
-        ),
-    ], style={'marginBottom': '20px'}),
-    
-    html.Div([
+                options=[{'label': label, 'value': value} for value, label in GRAPH_TYPE_TRANSLATIONS.items()],
+                value=None,
+                id='graph-type-dropdown'
+            )
+        ], className='dropdown-container'),
+
+        # Theme toggle button
         html.Div([
-            dcc.Graph(id='sales-by-product-graph')
-        ], style={'width': '48%', 'display': 'inline-block'}),
-        
-        html.Div([
-            dcc.Graph(id='sales-by-region-graph')
-        ], style={'width': '48%', 'display': 'inline-block', 'float': 'right'}),
-    ]),
-    
+            html.Button('Promeni temu', id='theme-toggle', n_clicks=0)
+        ], className='theme-toggle-container')
+    ], className='controls-container'),
+
+    html.Hr(className='separator'),
+
+    html.H2(children='privremeno', className='plot-title'),
+    # Graph container
     html.Div([
-        dcc.Graph(id='sales-trend-graph')
-    ]),
-    
-    html.Div([
-        html.Div([
-            dcc.Graph(id='revenue-by-product-graph')
-        ], style={'width': '48%', 'display': 'inline-block'}),
-        
-        html.Div([
-            dcc.Graph(id='revenue-by-category-graph')
-        ], style={'width': '48%', 'display': 'inline-block', 'float': 'right'}),
-    ]),
-], style={'padding': '20px'})
+        dcc.Graph(id='graph-content')
+    ], className='graph-container'),
 
-# Define callbacks to update graphs based on filters
+    # Store the current theme
+    dcc.Store(id='theme-store', storage_type='local')
+], id='main-container')
 
-@callback(
-    Output('sales-by-product-graph', 'figure'),
-    [Input('date-picker-range', 'start_date'),
-     Input('date-picker-range', 'end_date'),
-     Input('region-checklist', 'value')]
+
+
+@app.callback(
+    Output('graph-content', 'figure'),
+    Input('year-dropdown', 'value'),
+    Input('graph-type-dropdown', 'value'),
+    Input('theme-store', 'data')
 )
-def update_sales_by_product(start_date, end_date, regions):
-    # Get filtered data from fake DB
-    filtered_data = fake_db.get_sales_data(
-        start_date=start_date,
-        end_date=end_date,
-        region=regions
-    )
-    
-    # Aggregate data
-    product_sales = filtered_data.groupby('product')['sales'].sum().reset_index()
-    
-    # Create figure
-    fig = px.bar(
-        product_sales, 
-        x='product', 
-        y='sales',
-        title='Sales by Product',
-        labels={'product': 'Product', 'sales': 'Total Sales'},
-        color='product'
-    )
-    
-    # Update layout
-    fig.update_layout(xaxis_title='Product', yaxis_title='Sales')
-    
-    return fig
+def update_graph(year, graph_type, theme):
+    if not year or not graph_type:
+        return {}
 
-@callback(
-    Output('sales-by-region-graph', 'figure'),
-    [Input('date-picker-range', 'start_date'),
-     Input('date-picker-range', 'end_date'),
-     Input('product-dropdown', 'value')]
-)
-def update_sales_by_region(start_date, end_date, products):
-    # Get filtered data from fake DB
-    filtered_data = fake_db.get_sales_data(
-        start_date=start_date,
-        end_date=end_date,
-        product=products
-    )
-    
-    # Aggregate data
-    region_sales = filtered_data.groupby('region')['sales'].sum().reset_index()
-    
-    # Create figure
-    fig = px.pie(
-        region_sales, 
-        values='sales', 
-        names='region',
-        title='Sales by Region',
-        hole=0.3
-    )
-    
-    return fig
+    frame_year = total_household_interest_rates[total_household_interest_rates.year == year].copy()
+    frame_year["month_name"] = frame_year["month"].map(month_names)
 
-@callback(
-    Output('sales-trend-graph', 'figure'),
-    [Input('date-picker-range', 'start_date'),
-     Input('date-picker-range', 'end_date'),
-     Input('product-dropdown', 'value'),
-     Input('region-checklist', 'value')]
-)
-def update_sales_trend(start_date, end_date, products, regions):
-    # Get filtered data from fake DB
-    filtered_data = fake_db.get_sales_data(
-        start_date=start_date,
-        end_date=end_date,
-        product=products,
-        region=regions
-    )
-    
-    # Aggregate data by date
-    daily_sales = filtered_data.groupby('date')['sales'].sum().reset_index()
-    
-    # Create figure
-    fig = px.line(
-        daily_sales, 
-        x='date', 
-        y='sales',
-        title='Sales Trend Over Time',
-        labels={'date': 'Date', 'sales': 'Sales'}
-    )
-    
-    # Add rolling average
-    if len(daily_sales) > 7:
-        daily_sales['7_day_avg'] = daily_sales['sales'].rolling(window=7).mean()
-        fig.add_scatter(
-            x=daily_sales['date'], 
-            y=daily_sales['7_day_avg'],
-            mode='lines',
-            name='7-Day Moving Average',
-            line=dict(color='red', dash='dash')
-        )
-    
-    # Update layout
-    fig.update_layout(xaxis_title='Date', yaxis_title='Sales')
-    
-    return fig
+    # Set template based on theme
+    template = 'plotly_dark' if theme == 'dark' else 'plotly_white'
 
-@callback(
-    Output('revenue-by-product-graph', 'figure'),
-    [Input('date-picker-range', 'start_date'),
-     Input('date-picker-range', 'end_date'),
-     Input('region-checklist', 'value')]
-)
-def update_revenue_by_product(start_date, end_date, regions):
-    # Get filtered data from fake DB
-    filtered_data = fake_db.get_sales_data(
-        start_date=start_date,
-        end_date=end_date,
-        region=regions
-    )
-    
-    # Aggregate data
-    product_revenue = filtered_data.groupby('product')['revenue'].sum().reset_index()
-    product_revenue = product_revenue.sort_values('revenue', ascending=False)
-    
-    # Create figure
-    fig = px.bar(
-        product_revenue, 
-        x='product', 
-        y='revenue',
-        title='Revenue by Product',
-        labels={'product': 'Product', 'revenue': 'Total Revenue ($)'},
-        color='product'
-    )
-    
-    # Format y-axis as currency
-    fig.update_layout(
-        xaxis_title='Product', 
-        yaxis_title='Revenue ($)',
-        yaxis=dict(tickprefix='$')
-    )
-    
-    return fig
+    # Use the mapping to call the appropriate function
+    if graph_type in GRAPH_TYPE_FUNCTIONS:
+        return GRAPH_TYPE_FUNCTIONS[graph_type](frame_year, template)
 
-@callback(
-    Output('revenue-by-category-graph', 'figure'),
-    [Input('date-picker-range', 'start_date'),
-     Input('date-picker-range', 'end_date'),
-     Input('region-checklist', 'value'),
-     Input('product-dropdown', 'value')]
-)
-def update_revenue_by_category(start_date, end_date, regions, products):
-    # Get filtered data from fake DB
-    filtered_data = fake_db.get_sales_data(
-        start_date=start_date,
-        end_date=end_date,
-        region=regions,
-        product=products
-    )
-    
-    # Aggregate data
-    category_revenue = filtered_data.groupby('category')['revenue'].sum().reset_index()
-    
-    # Create figure
-    fig = px.pie(
-        category_revenue, 
-        values='revenue', 
-        names='category',
-        title='Revenue by Category',
-        color_discrete_sequence=px.colors.sequential.Plasma
-    )
-    
-    # Add total revenue in the center
-    total_revenue = category_revenue['revenue'].sum()
-    fig.update_traces(
-        textinfo='percent+label',
-        hovertemplate='<b>%{label}</b><br>Revenue: $%{value:,.0f}<br>Percentage: %{percent}'
-    )
-    
-    # Add annotation for total revenue
-    fig.add_annotation(
-        text=f"Total Revenue:<br>${total_revenue:,.0f}",
-        x=0.5, y=0.5,
-        font_size=14,
-        showarrow=False
-    )
-    
-    return fig
+    # Return empty figure if graph_type is not recognized
+    return {}
+
+if __name__ == '__main__':
+    app.run(debug=True)

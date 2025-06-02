@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from src.frontend.fake_db import fake_db
+from src.frontend_old.fake_db import fake_db
 
 def dash_example(request):
     product_sales = fake_db.get_sales_by_product()
