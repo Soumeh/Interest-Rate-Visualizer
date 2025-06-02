@@ -17,7 +17,7 @@ load_dotenv()
 def get_cached_data(url, sheet_name: str | int = 0, cache_dir: str = ".temp/excel/", force_download: bool = False) -> DataFrame:
     """Download an Excel file with caching"""
     cache_dir = Path(cache_dir)
-    cache_dir.mkdir(exist_ok=True)
+    cache_dir.mkdir(exist_ok=True, parents=True)
 
     url_hash = md5(url.encode()).hexdigest()
     cache_path = cache_dir / f"{url_hash}.xls"

@@ -1,9 +1,11 @@
 from numpy import isnan
 from pandas import DataFrame, Series
 from sqlalchemy.orm import Session
+from sqlalchemy import insert, inspect
 
 from src.common.test import month_to_integer
-from src.db.models import BankingData, BankingDataType, HouseholdInterestRates, HouseholdLoans
+from src.db.models import BankingData, BankingDataType, HouseholdInterestRates, HouseholdLoans, Base
+
 
 def process_table(session: Session, date_frame: DataFrame, table_frame: DataFrame, table_type: type[BankingData], data_type: BankingDataType):
     previous_year = None
@@ -20,10 +22,8 @@ def process_table(session: Session, date_frame: DataFrame, table_frame: DataFram
                 previous_year = year
             month = month_to_integer(date.iloc[1])
 
-            rate = table_type.from_row(data_type, year, month, row)
-            exists = session.query(table_type).filter_by(data_type=rate.data_type, year=rate.year, month=rate.month).scalar() is not None
-            if not exists:
-                session.add(rate)
+            rate = table_type.from_row(data_type.value, year, month, row)
+            session.add(rate)
         except Exception as exception:
             print(f"Error processing row {i}: {exception}")
 

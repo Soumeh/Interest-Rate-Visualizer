@@ -3,7 +3,16 @@ import enum
 import pandas
 import sqlalchemy
 from pandas import DataFrame, isnull, Series
-from sqlalchemy import Column, Integer, Float, Enum, Engine, MetaData, Table
+from sqlalchemy import (
+    Column,
+    Integer,
+    Float,
+    Enum,
+    Engine,
+    MetaData,
+    Table,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
@@ -12,11 +21,11 @@ def or_none(element):
     return None if isnull(element) else element
 
 class BankingDataType(enum.Enum):
-    TOTAL = "total"
-    HOUSING = "housing"
-    CONSUMER = "consumer"
-    CASH = "cash"
-    OTHER = "other"
+    TOTAL = "TOTAL"
+    HOUSING = "HOUSING"
+    CONSUMER = "CONSUMER"
+    CASH = "CASH"
+    OTHER = "OTHER"
 
 class BankingData:
     id = Column(Integer, primary_key=True)
@@ -40,6 +49,8 @@ class BankingData:
 
     final_total = Column(Float)
     _previous_year = None
+
+    __table_args__ = (UniqueConstraint('data_type', 'year', 'month'),)
 
     @classmethod
     def from_row(cls, data_type: BankingDataType, year: int, month: int, row: DataFrame | Series) -> "BankingData":
@@ -70,6 +81,8 @@ class BankingData:
 
 class HouseholdInterestRates(Base, BankingData):
     __tablename__ = "household_interest_rates"
+    # __table_args__ = (UniqueConstraint('data_type', 'year', 'month', name='uix_household_interest_rates'),)
 
 class HouseholdLoans(Base, BankingData):
     __tablename__ = "household_loans"
+    # __table_args__ = (UniqueConstraint('data_type', 'year', 'month', name='uix_household_loans'),)
