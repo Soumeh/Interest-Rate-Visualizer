@@ -55,26 +55,15 @@ def create_currency_comparison_graph(frame_year, template):
         template=template
     )
 
-def ovo_ce_biti_grafikon_za_penis(frame_year, template):
-    """Create a line chart showing totals by month."""
-    return px.line(
-        frame_year,
-        x="month_name",
-        y="total",
-        labels={"month_name": "Mesec", "total": "Ukupno"},
-        template=template
-    )
 
 GRAPH_TYPE_TRANSLATIONS = {
     'total_by_month': 'Ukupne kamatne stope po mesecu',
-    'currency_comparison': 'Poređenje kamatnih stopa po valutama',
-    'pebis': 'kliknite ovde za pebis'
+    'currency_comparison': 'Poređenje kamatnih stopa po valutama'
 }
 
 GRAPH_TYPE_FUNCTIONS = {
     'total_by_month': create_total_by_month_graph,
-    'currency_comparison': create_currency_comparison_graph,
-    'pebis': ovo_ce_biti_grafikon_za_penis,
+    'currency_comparison': create_currency_comparison_graph
 }
 
 
