@@ -8,14 +8,16 @@ import requests
 import sqlalchemy
 from dotenv import load_dotenv
 from narwhals import DataFrame
+from sqlalchemy.orm import Session
 
-from src.db.models import Base
-from src.etl.processors import *  # noqa: F403
+from src.db import Base
+from src.etl.processors import process_population_interest_rates, process_population_loans, \
+    process_non_financial_interest_rates
 
 load_dotenv()
+ENGINE = sqlalchemy.create_engine(os.getenv("DATABASE_URL"))
 
 def get_cached_data(url, sheet_name: str | int = 0, cache_dir: str = ".temp/excel/", force_download: bool = False) -> DataFrame:
-    """Download an Excel file with caching"""
     cache_dir = Path(cache_dir)
     cache_dir.mkdir(exist_ok=True, parents=True)
 
@@ -32,26 +34,30 @@ def get_cached_data(url, sheet_name: str | int = 0, cache_dir: str = ".temp/exce
 
     return pandas.read_excel(cache_path, sheet_name=sheet_name, na_values=['-', ' ', '', ' -', '- '], header=None)
 
-engine = sqlalchemy.create_engine(os.getenv("DATABASE_URL"))
-
-def process_file(url: str, sheet_name: str, frame_consumer: Callable):
+def process_file(session: Session, url: str, sheet_name: str, frame_consumer: Callable):
     frame: DataFrame = get_cached_data(url, sheet_name)
-    with Session(engine) as session:
-        frame_consumer(session, frame)
-        session.commit()
+    frame_consumer(session, frame)
 
 def main():
-    Base.metadata.create_all(engine)
-    with Session(engine) as session:
+    Base.metadata.create_all(ENGINE)
+    with Session(ENGINE) as session:
         process_file(
+            session,
             "https://www.nbs.rs/export/sites/NBS_site/documents/statistika/monetarni_sektor/SBMS_ks_3.xls",
             "Weighted IR on loans-New Bus.",
             process_population_interest_rates,
         )
         process_file(
+            session,
             "https://www.nbs.rs/export/sites/NBS_site/documents/statistika/monetarni_sektor/SBMS_ks_3.xls",
             "Volume on loans-New Bus.",
             process_population_loans,
+        )
+        process_file(
+            session,
+            "https://www.nbs.rs/export/sites/NBS_site/documents/statistika/monetarni_sektor/SBMS_ks_4.xlsx",
+            "Weighted IR on loans-New Bus.",
+            process_non_financial_interest_rates,
         )
         session.commit()
 

@@ -7,11 +7,11 @@ from django.template import Engine
 from dotenv import load_dotenv
 from pandas.core.interchange.dataframe_protocol import DataFrame
 
-from src.db.models import BankingDataType, HouseholdInterestRates
+from src.db.housing import HouseholdInterestRates, HouseholdDataType
 
 load_dotenv()
 engine: Engine = sqlalchemy.create_engine(os.getenv("DATABASE_URL"))
-total_household_interest_rates: DataFrame = HouseholdInterestRates.frame_by_type(engine, BankingDataType.TOTAL)
+total_household_interest_rates: DataFrame = HouseholdInterestRates.frame_by_type(engine, HouseholdDataType.TOTAL)
 
 def create_total_by_month_graph(frame_year, template):
     """Create a line chart showing totals by month."""
