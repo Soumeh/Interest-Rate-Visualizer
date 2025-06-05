@@ -18,8 +18,8 @@ def create_total_by_month_graph(frame_year, template):
     return px.line(
         frame_year,
         x="month_name",
-        y="total",
-        labels={"month_name": "Mesec", "total": "Ukupno"},
+        y="total_rsd",
+        labels={"month_name": "Mesec", "total_rsd": "Ukupno"},
         template=template
     )
 

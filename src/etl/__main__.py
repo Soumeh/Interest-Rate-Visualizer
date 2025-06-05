@@ -15,7 +15,7 @@ from src.etl.processors import process_population_interest_rates, process_popula
     process_non_financial_interest_rates
 
 load_dotenv()
-ENGINE = sqlalchemy.create_engine(os.getenv("DATABASE_URL"))
+ENGINE = sqlalchemy.create_engine(os.getenv("DATABASE_URL"), implicit_returning=False)
 
 def get_cached_data(url, sheet_name: str | int = 0, cache_dir: str = ".temp/excel/", force_download: bool = False) -> DataFrame:
     cache_dir = Path(cache_dir)
@@ -34,32 +34,32 @@ def get_cached_data(url, sheet_name: str | int = 0, cache_dir: str = ".temp/exce
 
     return pandas.read_excel(cache_path, sheet_name=sheet_name, na_values=['-', ' ', '', ' -', '- '], header=None)
 
-def process_file(session: Session, url: str, sheet_name: str, frame_consumer: Callable):
+def process_file(url: str, sheet_name: str, frame_consumer: Callable):
     frame: DataFrame = get_cached_data(url, sheet_name)
-    frame_consumer(session, frame)
+    # with Session(ENGINE) as session:
+    #     frame_consumer(session, frame)
+    #     session.commit()
+    frame_consumer(frame)
 
 def main():
     Base.metadata.create_all(ENGINE)
-    with Session(ENGINE) as session:
-        process_file(
-            session,
-            "https://www.nbs.rs/export/sites/NBS_site/documents/statistika/monetarni_sektor/SBMS_ks_3.xls",
-            "Weighted IR on loans-New Bus.",
-            process_population_interest_rates,
-        )
-        process_file(
-            session,
-            "https://www.nbs.rs/export/sites/NBS_site/documents/statistika/monetarni_sektor/SBMS_ks_3.xls",
-            "Volume on loans-New Bus.",
-            process_population_loans,
-        )
-        process_file(
-            session,
-            "https://www.nbs.rs/export/sites/NBS_site/documents/statistika/monetarni_sektor/SBMS_ks_4.xlsx",
-            "Weighted IR on loans-New Bus.",
-            process_non_financial_interest_rates,
-        )
-        session.commit()
+
+    process_file(
+        "https://www.nbs.rs/export/sites/NBS_site/documents/statistika/monetarni_sektor/SBMS_ks_3.xls",
+        "Weighted IR on loans-New Bus.",
+        process_population_interest_rates,
+    )
+    process_file(
+        "https://www.nbs.rs/export/sites/NBS_site/documents/statistika/monetarni_sektor/SBMS_ks_3.xls",
+        "Volume on loans-New Bus.",
+        process_population_loans,
+    )
+    process_file(
+        "https://www.nbs.rs/export/sites/NBS_site/documents/statistika/monetarni_sektor/SBMS_ks_4.xlsx",
+        "Weighted IR on loans-New Bus.",
+        process_non_financial_interest_rates,
+    )
+
 
 if __name__ == '__main__':
     main()
