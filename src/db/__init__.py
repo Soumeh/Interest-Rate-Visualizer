@@ -3,7 +3,7 @@ from enum import Enum
 import pandas
 import sqlalchemy
 from pandas import isnull, DataFrame, Series
-from sqlalchemy import Engine, Column, Integer, UniqueConstraint
+from sqlalchemy import Engine, Column, Integer, UniqueConstraint, Float
 from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
@@ -29,3 +29,27 @@ class SerializableData:
     @classmethod
     def from_row(cls, year: int, month: int, row: DataFrame | Series, **extra_data) -> "SerializableData":
         pass
+
+class DinarData(Base, SerializableData):
+    __tablename__ = "dinar_data"
+
+    id = Column(Integer, primary_key=True)
+
+    non_indexed = Column(Float)
+    reference_rate = Column(Float)
+    belibor_1m = Column(Float)
+    belibor_3m = Column(Float)
+    belibor_6m = Column(Float)
+    other = Column(Float)
+    total = Column(Float)
+
+class ForeignCurrencyData(Base, SerializableData):
+    __tablename__ = "foreign_currency_data"
+
+    id = Column(Integer, primary_key=True)
+
+    eur = Column(Float)
+    chf = Column(Float)
+    usd = Column(Float)
+    other = Column(Float)
+    total = Column(Float)
