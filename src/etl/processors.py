@@ -1,25 +1,17 @@
-import os
-
-import sqlalchemy
-from dotenv import load_dotenv
 from numpy import isnan
 from pandas import DataFrame, Series
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.common.test import month_to_integer
-from src.db import Base, SerializableData
-from src.db.housing import HouseholdInterestRates, HouseholdLoans, HouseholdDataType
+from src.db import Base, SerializableData, SerializableType
+from src.db.housing import HouseholdInterestRates, HouseholdInterestRatePurposes
 from src.db.non_financial import (
-    NonFinancialDataType,
     NonFinancialInterestRates,
-    NonFinancialImportsInterestRates,
-    NonFinancialImportsDataType,
+    NonFinancialInterestRatePurposes,
 )
 
-load_dotenv()
-ENGINE = sqlalchemy.create_engine(os.getenv("DATABASE_URL"), implicit_returning=False)
 
-def process_table(date_frame: DataFrame, table_frame: DataFrame, table: type[Base, SerializableData], **extra_data):
+async def process_table(session: AsyncSession, date_frame: DataFrame, table_frame: DataFrame, table: type[Base, SerializableData], purpose: type[SerializableType], **extra_data):
     previous_year = None
     index: int = 0
     try:
@@ -32,75 +24,53 @@ def process_table(date_frame: DataFrame, table_frame: DataFrame, table: type[Bas
             else:
                 year = int(year)
                 previous_year = year
+            print(year)
             month = month_to_integer(date.iloc[1])
 
-            with Session(ENGINE) as session:
-                query = table.query_insert(year, month, row, **extra_data)
-                session.execute(query)
-                session.commit()
+            await table.insert(session, purpose, year, month, row, **extra_data)
+            return
 
     except Exception as exception:
         print(f"Error processing row {i}: {exception}")
 
 
-def process_population_interest_rates(frame: DataFrame):
+async def process_population_interest_rates(session: AsyncSession, frame: DataFrame):
     date_frame: DataFrame = frame.iloc[11:-5, 0:2]
 
-    total_interest_rates_data = frame.iloc[11:-5, 2:14]
-    total_interest_rates_data[14] = Series()
-    process_table(date_frame, total_interest_rates_data, HouseholdInterestRates, data_type = HouseholdDataType.TOTAL)
+    total_data = frame.iloc[11:-5, 2:14]
+    total_data[14] = Series()
+    await process_table(session, date_frame, total_data, HouseholdInterestRates, HouseholdInterestRatePurposes.TOTAL)
 
-    housing_interest_rates_data = frame.iloc[11:-5, 14:27]
-    process_table(date_frame, housing_interest_rates_data, HouseholdInterestRates, data_type = HouseholdDataType.HOUSING)
+    housing_data = frame.iloc[11:-5, 14:27]
+    await process_table(session, date_frame, housing_data, HouseholdInterestRates, HouseholdInterestRatePurposes.HOUSING)
 
-    consumer_interest_rates_data = frame.iloc[11:-5, 27:40]
-    process_table(date_frame, consumer_interest_rates_data, HouseholdInterestRates, data_type = HouseholdDataType.CONSUMER)
+    consumer_data = frame.iloc[11:-5, 27:40]
+    await process_table(session, date_frame, consumer_data, HouseholdInterestRates, HouseholdInterestRatePurposes.CONSUMER)
 
-    cash_interest_rates_data = frame.iloc[11:-5, 40:53]
-    process_table(date_frame, cash_interest_rates_data, HouseholdInterestRates, data_type = HouseholdDataType.CASH)
+    cash_data = frame.iloc[11:-5, 40:53]
+    await process_table(session, date_frame, cash_data, HouseholdInterestRates, HouseholdInterestRatePurposes.CASH)
 
-    other_interest_rates_data = frame.iloc[11:-5, 53:66]
-    process_table(date_frame, other_interest_rates_data, HouseholdInterestRates, data_type = HouseholdDataType.OTHER)
+    other_data = frame.iloc[11:-5, 53:66]
+    await process_table(session, date_frame, other_data, HouseholdInterestRates, HouseholdInterestRatePurposes.OTHER)
 
-def process_population_loans(frame: DataFrame):
-    date_frame: DataFrame = frame.iloc[11:-5, 0:2]
+async def process_non_financial_interest_rates(session: AsyncSession, frame: DataFrame):
+    date_frame: DataFrame = frame.iloc[10:-5, 0:2]
 
-    total_loans_data = frame.iloc[11:-5, 2:14]
-    total_loans_data[14] = Series()
-    process_table(date_frame, total_loans_data, HouseholdLoans, data_type = HouseholdDataType.TOTAL)
+    total_data = frame.iloc[10:-5, 2:14]
+    total_data[14] = Series()
+    await process_table(session, date_frame, total_data, NonFinancialInterestRates, NonFinancialInterestRatePurposes.TOTAL)
 
-    housing_loans_data = frame.iloc[11:-5, 14:27]
-    process_table(date_frame, housing_loans_data, HouseholdLoans, data_type = HouseholdDataType.HOUSING)
+    current_data = frame.iloc[11:-5, 14:27]
+    await process_table(session, date_frame, current_data, NonFinancialInterestRates, NonFinancialInterestRatePurposes.CURRENT_ASSETS)
 
-    consumer_loans_data = frame.iloc[11:-5, 27:40]
-    process_table(date_frame, consumer_loans_data, HouseholdLoans, data_type = HouseholdDataType.CONSUMER)
+    investment_data = frame.iloc[11:-5, 27:40]
+    await process_table(session, date_frame, investment_data, NonFinancialInterestRates, NonFinancialInterestRatePurposes.INVESTMENT)
 
-    cash_loans_data = frame.iloc[11:-5, 40:53]
-    process_table(date_frame, cash_loans_data, HouseholdLoans, data_type = HouseholdDataType.CASH)
+    other_data = frame.iloc[11:-5, 40:53]
+    await process_table(session, date_frame, other_data, NonFinancialInterestRates, NonFinancialInterestRatePurposes.OTHER)
 
-    other_loans_data = frame.iloc[11:-5, 53:66]
-    process_table(date_frame, other_loans_data, HouseholdLoans, data_type = HouseholdDataType.OTHER)
+    total_data = frame.iloc[10:-5, 53:58]
+    await process_table(session, date_frame, total_data, NonFinancialInterestRates, NonFinancialInterestRatePurposes.IMPORT, only_foreign_rates = True)
 
-def process_non_financial_interest_rates(frame: DataFrame):
-    pass
-    # date_frame: DataFrame = frame.iloc[11:-5, 0:2]
-    #
-    # total_imports_data = frame.iloc[11:-5, 2:14]
-    # total_imports_data[14] = Series()
-    # process_table(date_frame, total_imports_data, NonFinancialInterestRates, data_type = NonFinancialDataType.TOTAL)
-    #
-    # current_assets_data = frame.iloc[11:-5, 14:27]
-    # process_table(date_frame, current_assets_data, NonFinancialInterestRates, data_type = NonFinancialDataType.CURRENT_ASSETS)
-    #
-    # investment_data = frame.iloc[11:-5, 27:40]
-    # process_table(date_frame, investment_data, NonFinancialInterestRates, data_type = NonFinancialDataType.INVESTMENT)
-    #
-    # other_data = frame.iloc[11:-5, 40:53]
-    # process_table(date_frame, other_data, NonFinancialInterestRates, data_type = NonFinancialDataType.OTHER)
-    #
-    #
-    # total_imports_data = frame.iloc[11:-5, 53:58]
-    # process_table(date_frame, total_imports_data, NonFinancialImportsInterestRates, data_type = NonFinancialImportsDataType.TOTAL)
-    #
-    # other_imports_data = frame.iloc[11:-5, 58:63]
-    # process_table(date_frame, other_imports_data, NonFinancialImportsInterestRates, data_type = NonFinancialImportsDataType.OTHER)
+    other_imports_data = frame.iloc[11:-5, 58:63]
+    await process_table(session, date_frame, other_imports_data, NonFinancialInterestRates, NonFinancialInterestRatePurposes.OTHER, only_foreign_rates = True)
