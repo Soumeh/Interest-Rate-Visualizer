@@ -40,7 +40,7 @@ async def async_main():
     engine = create_async_engine(getenv("DATABASE_URL"), future=True)
 
     async with engine.begin() as connection:
-        await connection.run_sync(Base.metadata.drop_all)
+        # await connection.run_sync(Base.metadata.drop_all)
         await connection.run_sync(Base.metadata.create_all)
 
     async with AsyncSession(engine) as session:

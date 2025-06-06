@@ -32,7 +32,7 @@ class HouseholdInterestRates(Base, SerializableData):
     __tablename__ = 'household_interest_rates'
     __table_args__ = (UniqueConstraint('purpose', 'year', 'month'),)
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
     year: Mapped[int] = mapped_column(Integer)
     month: Mapped[int] = mapped_column(Integer)
     purpose: Mapped[HouseholdInterestRatePurposes] = mapped_column(Enum(HouseholdInterestRatePurposes))
@@ -46,9 +46,9 @@ class HouseholdInterestRates(Base, SerializableData):
     @classmethod
     async def insert(cls, session: AsyncSession, purpose: HouseholdInterestRatePurposes, year: int, month: int, row: DataFrame | Series, **extra_data) -> ResultProxy:
         local_rates: ResultProxy = await LocalInterestRates.insert(session, row.iloc[0:7])
-        foreign_rates: ResultProxy = await ForeignInterestRates.insert(session, row.iloc[7:12])
-
         local_rates_id = local_rates.inserted_primary_key[0]
+
+        foreign_rates: ResultProxy = await ForeignInterestRates.insert(session, row.iloc[7:12])
         foreign_rates_id = foreign_rates.inserted_primary_key[0]
 
         query = insert(cls).values(

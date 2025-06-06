@@ -1,6 +1,6 @@
 from dash import Dash, html, dcc, Output, Input
 
-from src.common import month_names
+from src.common import MONTH_NAMES
 from src.frontend import GRAPH_TYPE_TRANSLATIONS, total_household_interest_rates, GRAPH_TYPE_FUNCTIONS
 
 app = Dash(__name__, assets_folder='assets')
@@ -74,7 +74,7 @@ def update_graph(year, graph_type, theme):
         return {}
 
     frame_year = total_household_interest_rates[total_household_interest_rates.year == year].copy()
-    frame_year["month_name"] = frame_year["month"].map(month_names)
+    frame_year["month_name"] = frame_year["month"].map(MONTH_NAMES)
 
     # Set template based on theme
     template = 'plotly_dark' if theme == 'dark' else 'plotly_white'
