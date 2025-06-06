@@ -11,7 +11,7 @@ from src.db.housing import HouseholdInterestRates, HouseholdInterestRatePurposes
 
 load_dotenv()
 engine: Engine = sqlalchemy.create_engine(os.getenv("DATABASE_URL"))
-total_household_interest_rates: DataFrame = HouseholdInterestRates.frame_by_type(engine, HouseholdInterestRatePurposes.TOTAL)
+total_household_interest_rates: DataFrame = HouseholdInterestRates._frame_by_type(engine, HouseholdInterestRatePurposes.TOTAL)
 
 def create_total_by_month_graph(frame_year, template):
     """Create a line chart showing totals by month."""

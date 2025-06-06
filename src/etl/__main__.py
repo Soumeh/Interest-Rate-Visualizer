@@ -2,7 +2,6 @@ import asyncio
 import hashlib
 from os import getenv
 from pathlib import Path
-from typing import Callable
 
 import pandas
 import requests
@@ -10,8 +9,13 @@ from dotenv import load_dotenv
 from narwhals import DataFrame
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 
-from src.db import Base
-from src.etl.processors import process_population_interest_rates, process_non_financial_interest_rates
+from src.db import Base, SerializableData
+from src.db.household_loans import HouseholdLoans
+from src.db.household_term_deposits import HouseholdTermDeposits
+from src.db.non_financial_loans import NonFinancialLoans
+from src.db.non_financial_term_deposits_by_size import NonFinancialTermDepositsBySize
+from src.db.total_loans import TotalLoans
+from src.db.total_loans_by_currency import TotalLoansByCurrency
 
 load_dotenv()
 
@@ -32,9 +36,9 @@ def get_cached_data(url, sheet_name: str | int = 0, cache_dir: str = ".temp/exce
 
     return pandas.read_excel(cache_path, sheet_name=sheet_name, na_values=['-', ' ', '', ' -', '- '], header=None)
 
-async def process_file(session: AsyncSession, url: str, sheet_name: str, frame_consumer: Callable):
+async def process_file(session: AsyncSession, url: str, sheet_name: str, table: type[SerializableData]):
     frame: DataFrame = get_cached_data(url, sheet_name)
-    await frame_consumer(session, frame)
+    await table.process_frame(session, frame)
 
 async def async_main():
     engine = create_async_engine(getenv("DATABASE_URL"), future=True)
@@ -45,17 +49,47 @@ async def async_main():
 
     async with AsyncSession(engine) as session:
         async with session.begin():
+            # await process_file(
+            #     session,
+            #     "https://www.nbs.rs/export/sites/NBS_site/documents/statistika/monetarni_sektor/SBMS_ks_3.xls",
+            #     "Weighted IR on loans-New Bus.",
+            #     HouseholdLoans,
+            # )
+            # await process_file(
+            #     session,
+            #     "https://www.nbs.rs/export/sites/NBS_site/documents/statistika/monetarni_sektor/SBMS_ks_4.xlsx",
+            #     "Weighted IR on loans-New Bus.",
+            #     NonFinancialLoans,
+            # )
+            # await process_file(
+            #     session,
+            #     "https://www.nbs.rs/export/sites/NBS_site/documents/statistika/monetarni_sektor/SBMS_ks_5.xls",
+            #     "Weighted IR on deposits-New Bus",
+            #     NonFinancialTermDepositsBySize,
+            # )
+            # await process_file(
+            #     session,
+            #     "https://www.nbs.rs/export/sites/NBS_site/documents/statistika/monetarni_sektor/SBMS_ks_6.xls",
+            #     "Weigted IR on deposits-New Bus.",
+            #     HouseholdTermDeposits,
+            # )
+            # await process_file(
+            #     session,
+            #     "https://www.nbs.rs/export/sites/NBS_site/documents/statistika/monetarni_sektor/SBMS_ks_7.xlsx",
+            #     "Weghted IR on deposits-New Bus.",
+            #     NonFinancialTermDepositsBySize,
+            # )
+            # await process_file(
+            #     session,
+            #     "https://www.nbs.rs/export/sites/NBS_site/documents/statistika/monetarni_sektor/SBMS18.xls",
+            #     "Weighted IR on loans-New Bus.",
+            #     TotalLoans,
+            # )
             await process_file(
                 session,
-                "https://www.nbs.rs/export/sites/NBS_site/documents/statistika/monetarni_sektor/SBMS_ks_3.xls",
-                "Weighted IR on loans-New Bus.",
-                process_population_interest_rates,
-            )
-            await process_file(
-                session,
-                "https://www.nbs.rs/export/sites/NBS_site/documents/statistika/monetarni_sektor/SBMS_ks_4.xlsx",
-                "Weighted IR on loans-New Bus.",
-                process_non_financial_interest_rates,
+                "https://www.nbs.rs/export/sites/NBS_site/documents/statistika/monetarni_sektor/SBMS25.xls",
+                "Weighted IR on Loans-New Bus.",
+                TotalLoansByCurrency,
             )
         await session.commit()
 

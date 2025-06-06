@@ -21,7 +21,7 @@ from src.db import (
 )
 
 
-class NonFinancialInterestRatePurposes(SerializableType):
+class NonFinancialLoanPurposes(SerializableType):
     TOTAL = "TOTAL"
     CURRENT_ASSETS = "CURRENT_ASSETS"
     INVESTMENT = "INVESTMENT"
@@ -29,14 +29,14 @@ class NonFinancialInterestRatePurposes(SerializableType):
     IMPORT = "IMPORT"
     FOREIGN = "FOREIGN"
 
-class NonFinancialInterestRates(Base, SerializableData):
-    __tablename__ = 'non_financial_interest_rates'
+class NonFinancialLoans(Base, SerializableData):
+    __tablename__ = 'non_financial_loans'
     __table_args__ = (UniqueConstraint('purpose', 'year', 'month'),)
 
     id: Mapped[int] = mapped_column(primary_key=True)
     year: Mapped[int] = mapped_column(Integer)
     month: Mapped[int] = mapped_column(Integer)
-    purpose: Mapped[NonFinancialInterestRatePurposes] = mapped_column(Enum(NonFinancialInterestRatePurposes))
+    purpose: Mapped[NonFinancialLoanPurposes] = mapped_column(Enum(NonFinancialLoanPurposes))
 
     local_rates_id: Mapped[int] = mapped_column(ForeignKey("local_interest_rates.id"), nullable=True)
     local_rates: Mapped[LocalInterestRates] = relationship(LocalInterestRates)
@@ -45,8 +45,8 @@ class NonFinancialInterestRates(Base, SerializableData):
     total: Mapped[float] = mapped_column(Float, nullable=True)
 
     @classmethod
-    async def insert(cls, session: AsyncSession, purpose: NonFinancialInterestRatePurposes, year: int, month: int, row: DataFrame | Series, **extra_data) -> ResultProxy:
-        if not 'only_foreign_rates' in extra_data:
+    async def insert(cls, session: AsyncSession, purpose: NonFinancialLoanPurposes, year: int, month: int, row: DataFrame | Series, **extra_data) -> ResultProxy:
+        if 'only_foreign_rates' not in extra_data:
             local_rates: ResultProxy = await LocalInterestRates.insert(session, row.iloc[0:7])
             local_rates_id = local_rates.inserted_primary_key[0]
             foreign_rates: ResultProxy = await ForeignInterestRates.insert(session, row.iloc[7:12])
@@ -67,3 +67,27 @@ class NonFinancialInterestRates(Base, SerializableData):
             total=total,
         ).on_conflict_do_nothing()
         return await session.execute(query)
+
+    @classmethod
+    async def process_frame(cls, session: AsyncSession, frame: DataFrame):
+        from_top, from_bottom = cls._get_start_end_points(frame)
+        date_frame: DataFrame = frame.iloc[from_top:from_bottom, 0:2]
+
+        total_data = frame.iloc[from_top:from_bottom, 2:14]
+        total_data[14] = Series()
+        await cls._process_rows(session, date_frame, total_data, NonFinancialLoanPurposes.TOTAL)
+
+        current_data = frame.iloc[from_top:from_bottom, 14:27]
+        await cls._process_rows(session, date_frame, current_data, NonFinancialLoanPurposes.CURRENT_ASSETS)
+
+        investment_data = frame.iloc[from_top:from_bottom, 27:40]
+        await cls._process_rows(session, date_frame, investment_data, NonFinancialLoanPurposes.INVESTMENT)
+
+        other_data = frame.iloc[from_top:from_bottom, 40:53]
+        await cls._process_rows(session, date_frame, other_data, NonFinancialLoanPurposes.OTHER)
+
+        total_data = frame.iloc[from_top:from_bottom, 53:58]
+        await cls._process_rows(session, date_frame, total_data, NonFinancialLoanPurposes.IMPORT, only_foreign_rates = True)
+
+        other_imports_data = frame.iloc[from_top:from_bottom, 58:63]
+        await cls._process_rows(session, date_frame, other_imports_data, NonFinancialLoanPurposes.OTHER, only_foreign_rates = True)

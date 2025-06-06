@@ -21,21 +21,20 @@ from src.db import (
 )
 
 
-class HouseholdInterestRatePurposes(SerializableType):
+class HouseholdTermDepositPurposes(SerializableType):
     TOTAL = "TOTAL"
-    HOUSING = "HOUSING"
-    CONSUMER = "CONSUMER"
-    CASH = "CASH"
-    OTHER = "OTHER"
+    UP_TO_ONE = "UP_TO_ONE"
+    ONE_UP_TO_TWO = "ONE_UP_TO_TWO"
+    OVER_TWO = "OVER_TWO"
 
-class HouseholdInterestRates(Base, SerializableData):
-    __tablename__ = 'household_interest_rates'
+class HouseholdTermDeposits(Base, SerializableData):
+    __tablename__ = 'household_term_deposits'
     __table_args__ = (UniqueConstraint('purpose', 'year', 'month'),)
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     year: Mapped[int] = mapped_column(Integer)
     month: Mapped[int] = mapped_column(Integer)
-    purpose: Mapped[HouseholdInterestRatePurposes] = mapped_column(Enum(HouseholdInterestRatePurposes))
+    purpose: Mapped[HouseholdTermDepositPurposes] = mapped_column(Enum(HouseholdTermDepositPurposes))
 
     local_rates_id: Mapped[int] = mapped_column(ForeignKey("local_interest_rates.id"), nullable=True)
     local_rates: Mapped[LocalInterestRates] = relationship(LocalInterestRates)
@@ -44,7 +43,7 @@ class HouseholdInterestRates(Base, SerializableData):
     total: Mapped[float] = mapped_column(Float, nullable=True)
 
     @classmethod
-    async def insert(cls, session: AsyncSession, purpose: HouseholdInterestRatePurposes, year: int, month: int, row: DataFrame | Series, **extra_data) -> ResultProxy:
+    async def insert(cls, session: AsyncSession, purpose: HouseholdTermDepositPurposes, year: int, month: int, row: DataFrame | Series, **extra_data) -> ResultProxy:
         local_rates: ResultProxy = await LocalInterestRates.insert(session, row.iloc[0:7])
         local_rates_id = local_rates.inserted_primary_key[0]
 
@@ -60,3 +59,21 @@ class HouseholdInterestRates(Base, SerializableData):
             total=or_none(row.iloc[12]),
         ).on_conflict_do_nothing()
         return await session.execute(query)
+
+    @classmethod
+    async def process_frame(cls, session: AsyncSession, frame: DataFrame):
+        from_top, to_bottom = cls._get_start_end_points(frame)
+        date_frame: DataFrame = frame.iloc[from_top:to_bottom, 0:2]
+
+        total_data = frame.iloc[from_top:to_bottom, 2:14]
+        total_data[14] = Series()
+        await cls._process_rows(session, date_frame, total_data, HouseholdTermDepositPurposes.TOTAL)
+
+        housing_data = frame.iloc[from_top:to_bottom, 14:27]
+        await cls._process_rows(session, date_frame, housing_data, HouseholdTermDepositPurposes.UP_TO_ONE)
+
+        consumer_data = frame.iloc[from_top:to_bottom, 27:40]
+        await cls._process_rows(session, date_frame, consumer_data, HouseholdTermDepositPurposes.ONE_UP_TO_TWO)
+
+        cash_data = frame.iloc[from_top:to_bottom, 40:53]
+        await cls._process_rows(session, date_frame, cash_data, HouseholdTermDepositPurposes.OVER_TWO)
