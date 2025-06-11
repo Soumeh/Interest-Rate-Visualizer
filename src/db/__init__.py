@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import declarative_base, Mapped, mapped_column
 
 from src.common.month_matcher import month_to_integer
+from src.frontend.type.quarter import FiscalSelection
 
 Base = declarative_base()
 
@@ -20,12 +21,18 @@ def or_none(element):
 class SerializableType(Enum):
     pass
 
-class SerializableData:
+class SerializableTable:
     __tablename__ = ""
 
     @classmethod
-    def _frame_by_type(cls, engine: Engine, data_type: SerializableType) -> DataFrame:
-        query = sqlalchemy.select("*").where(cls.__table__.c.purpose == data_type.value)
+    def get_data(cls, engine: Engine, purpose: SerializableType, year: int, selection: FiscalSelection) -> DataFrame:
+        table = cls.__table__.c
+        query = (
+            sqlalchemy.select("*")
+            .where(table.purpose == purpose.value)
+            .where(table.year == year)
+            .where(table.month in selection.range)
+        )
         return pandas.read_sql_query(query, engine)
 
     @classmethod
@@ -75,7 +82,7 @@ class SerializableData:
     async def insert(cls, session: AsyncSession, purpose: type[SerializableType], year: int, month: int, row: DataFrame, **extra_data):
         pass
 
-class LocalInterestRates(Base, SerializableData):
+class LocalInterestRates(Base, SerializableTable):
     __tablename__ = "local_interest_rates"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -100,7 +107,7 @@ class LocalInterestRates(Base, SerializableData):
         ).on_conflict_do_nothing()
         return await session.execute(query)
 
-class ForeignInterestRates(Base, SerializableData):
+class ForeignInterestRates(Base, SerializableTable):
     __tablename__ = "foreign_interest_rates"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -121,7 +128,7 @@ class ForeignInterestRates(Base, SerializableData):
         ).on_conflict_do_nothing()
         return await session.execute(query)
 
-class EnterpriseInterestRates(Base, SerializableData):
+class EnterpriseInterestRates(Base, SerializableTable):
     __tablename__ = 'enterprise_interest_rates'
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -137,22 +144,5 @@ class EnterpriseInterestRates(Base, SerializableData):
             one_up_to_two = or_none(row.iloc[1]),
             over_two = or_none(row.iloc[2]),
             total = or_none(row.iloc[3]),
-        ).on_conflict_do_nothing()
-        return await session.execute(query)
-
-class TotalInterestRates(Base, SerializableData):
-    __tablename__ = 'total_interest_rates'
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    household: Mapped[float] = mapped_column(Float, nullable=True)
-    non_financial: Mapped[float] = mapped_column(Float, nullable=True)
-    total: Mapped[float] = mapped_column(Float, nullable=True)
-
-    @classmethod
-    async def insert(cls, session: AsyncSession, row: DataFrame | Series) -> ResultProxy:
-        query = insert(cls).values(
-            household = or_none(row.iloc[0]),
-            non_financial = or_none(row.iloc[1]),
-            total = or_none(row.iloc[2]),
         ).on_conflict_do_nothing()
         return await session.execute(query)

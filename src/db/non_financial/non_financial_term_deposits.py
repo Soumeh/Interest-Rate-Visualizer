@@ -14,7 +14,7 @@ from sqlalchemy.orm import mapped_column, Mapped, relationship
 from src.db import (
     or_none,
     Base,
-    SerializableData,
+    SerializableTable,
     SerializableType,
     LocalInterestRates,
     ForeignInterestRates,
@@ -22,12 +22,12 @@ from src.db import (
 
 
 class NonFinancialTermDepositPurposes(SerializableType):
-    TOTAL = "TOTAL"
-    UP_TO_ONE = "UP_TO_ONE"
-    ONE_UP_TO_TWO = "ONE_UP_TO_TWO"
-    OVER_TWO = "OVER_TWO"
+    TOTAL = "Ukupno"
+    UP_TO_ONE = "Oročeni depoziti do 1 godine"
+    ONE_UP_TO_TWO = "Oročeni depoziti preko 1 do 2 godine"
+    OVER_TWO = "Oročeni depoziti preko 2 godine"
 
-class NonFinancialTermDeposits(Base, SerializableData):
+class NonFinancialTermDeposits(Base, SerializableTable):
     __tablename__ = 'non_financial_term_deposits'
     __table_args__ = (UniqueConstraint('purpose', 'year', 'month'),)
 
@@ -51,7 +51,7 @@ class NonFinancialTermDeposits(Base, SerializableData):
         foreign_rates_id = foreign_rates.inserted_primary_key[0]
 
         query = insert(cls).values(
-            purpose=purpose,
+            purpose=purpose.name,
             year=year,
             month=month,
             local_rates_id=local_rates_id,

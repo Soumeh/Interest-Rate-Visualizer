@@ -1,17 +1,12 @@
-import os
-
 import pandas as pd
 import plotly.express as px
-import sqlalchemy
-from django.template import Engine
 from dotenv import load_dotenv
 from pandas.core.interchange.dataframe_protocol import DataFrame
 
-from src.db.housing import HouseholdInterestRates, HouseholdInterestRatePurposes
+from src.db.household.household_loans import HouseholdLoans, HouseholdLoanPurposes
 
-load_dotenv()
-engine: Engine = sqlalchemy.create_engine(os.getenv("DATABASE_URL"))
-total_household_interest_rates: DataFrame = HouseholdInterestRates._frame_by_type(engine, HouseholdInterestRatePurposes.TOTAL)
+# load_dotenv()
+# total_household_interest_rates: DataFrame = HouseholdLoans.frame_by_type(engine, HouseholdLoanPurposes.TOTAL)
 
 def create_total_by_month_graph(frame_year, template):
     """Create a line chart showing totals by month."""
@@ -65,5 +60,3 @@ GRAPH_TYPE_FUNCTIONS = {
     'total_by_month': create_total_by_month_graph,
     'currency_comparison': create_currency_comparison_graph
 }
-
-

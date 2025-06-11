@@ -14,7 +14,7 @@ from sqlalchemy.orm import mapped_column, Mapped, relationship
 from src.db import (
     or_none,
     Base,
-    SerializableData,
+    SerializableTable,
     SerializableType,
     LocalInterestRates,
     ForeignInterestRates,
@@ -22,14 +22,14 @@ from src.db import (
 
 
 class NonFinancialLoanPurposes(SerializableType):
-    TOTAL = "TOTAL"
-    CURRENT_ASSETS = "CURRENT_ASSETS"
-    INVESTMENT = "INVESTMENT"
-    OTHER = "OTHER"
-    IMPORT = "IMPORT"
-    FOREIGN = "FOREIGN"
+    TOTAL = "Ukupno"
+    CURRENT_ASSETS = "Krediti za obrtna sredstva"
+    INVESTMENT = "Investicioni krediti"
+    OTHER_LOCAL_LOANS = "Ostali dinarski krediti"
+    IMPORTS = "Krediti za uvoz"
+    OTHER_FOREIGN_LOANS = "Ostali devizni krediti"
 
-class NonFinancialLoans(Base, SerializableData):
+class NonFinancialLoans(Base, SerializableTable):
     __tablename__ = 'non_financial_loans'
     __table_args__ = (UniqueConstraint('purpose', 'year', 'month'),)
 
@@ -59,7 +59,7 @@ class NonFinancialLoans(Base, SerializableData):
             total = None
 
         query = insert(cls).values(
-            purpose=purpose,
+            purpose=purpose.name,
             year=year,
             month=month,
             local_rates_id=local_rates_id,
@@ -84,10 +84,10 @@ class NonFinancialLoans(Base, SerializableData):
         await cls._process_rows(session, date_frame, investment_data, NonFinancialLoanPurposes.INVESTMENT)
 
         other_data = frame.iloc[from_top:from_bottom, 40:53]
-        await cls._process_rows(session, date_frame, other_data, NonFinancialLoanPurposes.OTHER)
+        await cls._process_rows(session, date_frame, other_data, NonFinancialLoanPurposes.OTHER_LOCAL_LOANS)
 
         total_data = frame.iloc[from_top:from_bottom, 53:58]
-        await cls._process_rows(session, date_frame, total_data, NonFinancialLoanPurposes.IMPORT, only_foreign_rates = True)
+        await cls._process_rows(session, date_frame, total_data, NonFinancialLoanPurposes.IMPORTS, only_foreign_rates = True)
 
         other_imports_data = frame.iloc[from_top:from_bottom, 58:63]
-        await cls._process_rows(session, date_frame, other_imports_data, NonFinancialLoanPurposes.OTHER, only_foreign_rates = True)
+        await cls._process_rows(session, date_frame, other_imports_data, NonFinancialLoanPurposes.OTHER_LOCAL_LOANS, only_foreign_rates = True)
