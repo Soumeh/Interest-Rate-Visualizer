@@ -3,10 +3,12 @@ from enum import Enum
 
 from dash import dcc
 
+
 @dataclass
 class FiscalSelection:
     range: range
     translation: str
+
 
 class FiscalSelections(Enum):
     Q1 = FiscalSelection(range(1, 4), "Prvi kvartal")

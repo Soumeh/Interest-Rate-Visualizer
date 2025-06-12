@@ -1,10 +1,6 @@
-from flask import Flask
+from src.backend import create_app
 
+app = create_app()
 
-def main():
-    app = Flask(__name__, instance_relative_config=False)
-    app.config.from_object('config.Config')
-
-    with app.app_context():
-        from . import routes
-        return app
+if __name__ == "__main__":
+    app.run(debug=True)

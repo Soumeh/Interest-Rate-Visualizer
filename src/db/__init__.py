@@ -15,17 +15,26 @@ from src.frontend.type.quarter import FiscalSelection
 
 Base = declarative_base()
 
+
 def or_none(element):
     return None if isnull(element) else element
 
+
 class SerializableType(Enum):
     pass
+
 
 class SerializableTable:
     __tablename__ = ""
 
     @classmethod
-    def get_data(cls, engine: Engine, purpose: SerializableType, year: int, selection: FiscalSelection) -> DataFrame:
+    def get_data(
+        cls,
+        engine: Engine,
+        purpose: SerializableType,
+        year: int,
+        selection: FiscalSelection,
+    ) -> DataFrame:
         table = cls.__table__.c
         query = (
             sqlalchemy.select("*")
@@ -79,8 +88,17 @@ class SerializableTable:
         pass
 
     @classmethod
-    async def insert(cls, session: AsyncSession, purpose: type[SerializableType], year: int, month: int, row: DataFrame, **extra_data):
+    async def insert(
+        cls,
+        session: AsyncSession,
+        purpose: type[SerializableType],
+        year: int,
+        month: int,
+        row: DataFrame,
+        **extra_data,
+    ):
         pass
+
 
 class LocalInterestRates(Base, SerializableTable):
     __tablename__ = "local_interest_rates"
@@ -95,17 +113,24 @@ class LocalInterestRates(Base, SerializableTable):
     total: Mapped[float] = mapped_column(Float, nullable=True)
 
     @classmethod
-    async def insert(cls, session: AsyncSession, row: DataFrame | Series) -> ResultProxy:
-        query = insert(cls).values(
-            non_indexed = or_none(row.iloc[0]),
-            reference_rate = or_none(row.iloc[1]),
-            belibor_1m = or_none(row.iloc[2]),
-            belibor_3m = or_none(row.iloc[3]),
-            belibor_6m = or_none(row.iloc[4]),
-            other = or_none(row.iloc[5]),
-            total = or_none(row.iloc[6]),
-        ).on_conflict_do_nothing()
+    async def insert(
+        cls, session: AsyncSession, row: DataFrame | Series
+    ) -> ResultProxy:
+        query = (
+            insert(cls)
+            .values(
+                non_indexed=or_none(row.iloc[0]),
+                reference_rate=or_none(row.iloc[1]),
+                belibor_1m=or_none(row.iloc[2]),
+                belibor_3m=or_none(row.iloc[3]),
+                belibor_6m=or_none(row.iloc[4]),
+                other=or_none(row.iloc[5]),
+                total=or_none(row.iloc[6]),
+            )
+            .on_conflict_do_nothing()
+        )
         return await session.execute(query)
+
 
 class ForeignInterestRates(Base, SerializableTable):
     __tablename__ = "foreign_interest_rates"
@@ -118,18 +143,25 @@ class ForeignInterestRates(Base, SerializableTable):
     total: Mapped[float] = mapped_column(Float, nullable=True)
 
     @classmethod
-    async def insert(cls, session: AsyncSession, row: DataFrame | Series) -> ResultProxy:
-        query = insert(cls).values(
-            eur = or_none(row.iloc[0]),
-            chf = or_none(row.iloc[1]),
-            usd = or_none(row.iloc[2]),
-            other = or_none(row.iloc[3]),
-            total = or_none(row.iloc[4]),
-        ).on_conflict_do_nothing()
+    async def insert(
+        cls, session: AsyncSession, row: DataFrame | Series
+    ) -> ResultProxy:
+        query = (
+            insert(cls)
+            .values(
+                eur=or_none(row.iloc[0]),
+                chf=or_none(row.iloc[1]),
+                usd=or_none(row.iloc[2]),
+                other=or_none(row.iloc[3]),
+                total=or_none(row.iloc[4]),
+            )
+            .on_conflict_do_nothing()
+        )
         return await session.execute(query)
 
+
 class EnterpriseInterestRates(Base, SerializableTable):
-    __tablename__ = 'enterprise_interest_rates'
+    __tablename__ = "enterprise_interest_rates"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     up_to_one: Mapped[float] = mapped_column(Float, nullable=True)
@@ -138,11 +170,17 @@ class EnterpriseInterestRates(Base, SerializableTable):
     total: Mapped[float] = mapped_column(Float, nullable=True)
 
     @classmethod
-    async def insert(cls, session: AsyncSession, row: DataFrame | Series) -> ResultProxy:
-        query = insert(cls).values(
-            up_to_one = or_none(row.iloc[0]),
-            one_up_to_two = or_none(row.iloc[1]),
-            over_two = or_none(row.iloc[2]),
-            total = or_none(row.iloc[3]),
-        ).on_conflict_do_nothing()
+    async def insert(
+        cls, session: AsyncSession, row: DataFrame | Series
+    ) -> ResultProxy:
+        query = (
+            insert(cls)
+            .values(
+                up_to_one=or_none(row.iloc[0]),
+                one_up_to_two=or_none(row.iloc[1]),
+                over_two=or_none(row.iloc[2]),
+                total=or_none(row.iloc[3]),
+            )
+            .on_conflict_do_nothing()
+        )
         return await session.execute(query)

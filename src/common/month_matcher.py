@@ -5,6 +5,7 @@ def month_to_integer(month: str) -> int | None:
             return i + 1
     return None
 
+
 MONTH_MATCHES = [
     ["jan", "january", "januar"],
     ["feb", "february", "februar"],
@@ -17,5 +18,5 @@ MONTH_MATCHES = [
     ["sep", "september", "septembar"],
     ["oct", "okt", "october", "oktobar"],
     ["nov", "november", "novembar"],
-    ["dec", "december", "decembar"]
+    ["dec", "december", "decembar"],
 ]

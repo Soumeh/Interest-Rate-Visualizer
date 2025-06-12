@@ -27,37 +27,60 @@ class HouseholdTermDepositPurposes(SerializableType):
     ONE_UP_TO_TWO = "Oročeni depoziti preko 1 do 2 godine"
     OVER_TWO = "Oročeni depoziti preko 2 godine"
 
+
 class HouseholdTermDeposits(Base, SerializableTable):
-    __tablename__ = 'household_term_deposits'
-    __table_args__ = (UniqueConstraint('purpose', 'year', 'month'),)
+    __tablename__ = "household_term_deposits"
+    __table_args__ = (UniqueConstraint("purpose", "year", "month"),)
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     year: Mapped[int] = mapped_column(Integer)
     month: Mapped[int] = mapped_column(Integer)
-    purpose: Mapped[HouseholdTermDepositPurposes] = mapped_column(Enum(HouseholdTermDepositPurposes))
+    purpose: Mapped[HouseholdTermDepositPurposes] = mapped_column(
+        Enum(HouseholdTermDepositPurposes)
+    )
 
-    local_rates_id: Mapped[int] = mapped_column(ForeignKey("local_interest_rates.id"), nullable=True)
+    local_rates_id: Mapped[int] = mapped_column(
+        ForeignKey("local_interest_rates.id"), nullable=True
+    )
     local_rates: Mapped[LocalInterestRates] = relationship(LocalInterestRates)
-    foreign_rates_id: Mapped[int] = mapped_column(ForeignKey("foreign_interest_rates.id"), nullable=True)
+    foreign_rates_id: Mapped[int] = mapped_column(
+        ForeignKey("foreign_interest_rates.id"), nullable=True
+    )
     foreign_rates: Mapped[ForeignInterestRates] = relationship(ForeignInterestRates)
     total: Mapped[float] = mapped_column(Float, nullable=True)
 
     @classmethod
-    async def insert(cls, session: AsyncSession, purpose: HouseholdTermDepositPurposes, year: int, month: int, row: DataFrame | Series, **extra_data) -> ResultProxy:
-        local_rates: ResultProxy = await LocalInterestRates.insert(session, row.iloc[0:7])
+    async def insert(
+        cls,
+        session: AsyncSession,
+        purpose: HouseholdTermDepositPurposes,
+        year: int,
+        month: int,
+        row: DataFrame | Series,
+        **extra_data,
+    ) -> ResultProxy:
+        local_rates: ResultProxy = await LocalInterestRates.insert(
+            session, row.iloc[0:7]
+        )
         local_rates_id = local_rates.inserted_primary_key[0]
 
-        foreign_rates: ResultProxy = await ForeignInterestRates.insert(session, row.iloc[7:12])
+        foreign_rates: ResultProxy = await ForeignInterestRates.insert(
+            session, row.iloc[7:12]
+        )
         foreign_rates_id = foreign_rates.inserted_primary_key[0]
 
-        query = insert(cls).values(
-            purpose=purpose.name,
-            year=year,
-            month=month,
-            local_rates_id=local_rates_id,
-            foreign_rates_id=foreign_rates_id,
-            total=or_none(row.iloc[12]),
-        ).on_conflict_do_nothing()
+        query = (
+            insert(cls)
+            .values(
+                purpose=purpose.name,
+                year=year,
+                month=month,
+                local_rates_id=local_rates_id,
+                foreign_rates_id=foreign_rates_id,
+                total=or_none(row.iloc[12]),
+            )
+            .on_conflict_do_nothing()
+        )
         return await session.execute(query)
 
     @classmethod
@@ -67,13 +90,24 @@ class HouseholdTermDeposits(Base, SerializableTable):
 
         total_data = frame.iloc[from_top:to_bottom, 2:14]
         total_data[14] = Series()
-        await cls._process_rows(session, date_frame, total_data, HouseholdTermDepositPurposes.TOTAL)
+        await cls._process_rows(
+            session, date_frame, total_data, HouseholdTermDepositPurposes.TOTAL
+        )
 
         housing_data = frame.iloc[from_top:to_bottom, 14:27]
-        await cls._process_rows(session, date_frame, housing_data, HouseholdTermDepositPurposes.UP_TO_ONE)
+        await cls._process_rows(
+            session, date_frame, housing_data, HouseholdTermDepositPurposes.UP_TO_ONE
+        )
 
         consumer_data = frame.iloc[from_top:to_bottom, 27:40]
-        await cls._process_rows(session, date_frame, consumer_data, HouseholdTermDepositPurposes.ONE_UP_TO_TWO)
+        await cls._process_rows(
+            session,
+            date_frame,
+            consumer_data,
+            HouseholdTermDepositPurposes.ONE_UP_TO_TWO,
+        )
 
         cash_data = frame.iloc[from_top:to_bottom, 40:53]
-        await cls._process_rows(session, date_frame, cash_data, HouseholdTermDepositPurposes.OVER_TWO)
+        await cls._process_rows(
+            session, date_frame, cash_data, HouseholdTermDepositPurposes.OVER_TWO
+        )

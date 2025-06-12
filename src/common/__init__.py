@@ -1,4 +1,3 @@
-
 MONTH_NAMES = {
     1: "Januar",
     2: "Februar",

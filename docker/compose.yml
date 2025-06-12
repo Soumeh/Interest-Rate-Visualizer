@@ -1,0 +1,46 @@
+services:
+    database:
+        container_name: database
+        image: postgres:17
+        environment:
+            POSTGRES_USER: ${POSTGRES_USER}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+            POSTGRES_DB: ${POSTGRES_DB}
+        ports:
+            - "5123:5432"
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+    etl:
+        container_name: etl
+        build:
+            context: ..
+            dockerfile: docker/Dockerfile-etl
+        depends_on:
+            - database
+        labels:
+            ofelia.enabled: "true"
+            ofelia.job-exec.etl.schedule: "@every 10s"
+            ofelia.job-exec.etl.command: "/bin/bash scripts/start_etl.sh"
+    backend:
+        container_name: backend
+        build:
+            context: ..
+            dockerfile: docker/Dockerfile-backend
+        depends_on:
+            - database
+            - etl
+        ports:
+            - "8000:5000"
+    ofelia:
+        container_name: ofelia
+        image: mcuadros/ofelia:latest
+        restart: always
+        depends_on:
+            - database
+            - etl
+        command: daemon --docker
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock:r
+
+volumes:
+    postgres_data:

@@ -1,18 +1,11 @@
-import asyncio
-from os import getenv
-
-from dash import Dash, html, dcc, Output, Input
 from dotenv import load_dotenv
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 
-from src.common import MONTH_NAMES
+from src.backend import create_app
+
 # from src.frontend import GRAPH_TYPE_TRANSLATIONS, total_household_interest_rates, GRAPH_TYPE_FUNCTIONS
-from src.frontend.app import app
+# from src.frontend.app import app
 
 load_dotenv()
-
-
-
 
 
 # @app.callback(
@@ -38,13 +31,17 @@ load_dotenv()
 #     # Return empty figure if graph_type is not recognized
 #     return {}
 
-async def async_main():
-    engine = create_async_engine(getenv("DATABASE_URL"), future=True)
-    async with AsyncSession(engine) as session:
-        async with session.begin():
-            pass
+# async def async_main():
+#     engine = create_async_engine(getenv("DATABASE_URL"), future=True)
+#     async with AsyncSession(engine) as session:
+#         async with session.begin():
+#             pass
+#
+#     app.run(debug=True)
+#
+# if __name__ == '__main__':
+#     asyncio.run(async_main())
 
+if __name__ == "__main__":
+    app = create_app()
     app.run(debug=True)
-
-if __name__ == '__main__':
-    asyncio.run(async_main())

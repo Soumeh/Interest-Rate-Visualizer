@@ -1,11 +1,21 @@
+# Requirements
+
+- Python 3.12
+- PostgreSQL 17
+- Docker
+- Docker BuildKit
+- [UV](https://github.com/astral-sh/uv)
+
 # Development
 
-Install with [uv](https://github.com/astral-sh/uv)
+Install packages with UV.
+
 ```bash
 uv sync
 ```
 
-Format with ruff
+Format with Ruff.
+
 ```bash
 ruff format
 ruff check --fix
