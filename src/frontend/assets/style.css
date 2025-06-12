@@ -1,11 +1,11 @@
+/* Variables */
 :root {
-	/* Light theme (default) */
 	--background-color: #f8f9fa;
 	--text-color: #212529;
 	--border-color: #dee2e6;
 	--dropdown-bg: #ffffff;
 	--dropdown-hover: #f1f3f5;
-	--button-bg: #e9ecef;
+	--button-bg: #d0d3d6;
 	--button-hover: #ced4da;
 	--button-text: #212529;
 	--container-bg: #ffffff;
@@ -25,6 +25,7 @@
 	--shadow-color: rgba(0, 0, 0, 0.3);
 }
 
+/* Base styles */
 body {
 	font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 	margin: 0;
@@ -34,26 +35,72 @@ body {
 	transition: background-color 0.3s, color 0.3s;
 }
 
+/* Main container */
 #main-container {
 	max-width: 1200px;
 	margin: 0 auto;
 	padding: 20px;
 }
 
+/* Header */
 h1 {
 	text-align: center;
 	margin-bottom: 30px;
 	color: var(--text-color);
 }
 
-.plot-title {
-	text-align: center;
+/* Theme toggle section */
+.theme-toggle-container {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 20px;
+	justify-content: space-between;
+	align-items: flex-end;
 }
 
-.separator {
-
+/* Button styles */
+.button {
+	background-color: var(--button-bg);
+	color: var(--button-text);
+	border: 1px solid var(--border-color);
+	padding: 10px 15px;
+	border-radius: 4px;
+	cursor: pointer;
+	font-weight: 500;
+	transition: background-color 0.2s;
 }
 
+.button:hover, #theme-toggle:hover {
+	background-color: var(--button-hover);
+}
+
+.data-table div {
+	color: var(--button-bg);
+}
+
+.export {
+	font-size: 0 !important;
+	background-color: var(--button-bg) !important;
+	color: var(--button-text);
+	border: 1px solid var(--border-color);
+	padding: 10px 15px;
+	border-radius: 4px;
+	cursor: pointer;
+	font-weight: 500;
+	transition: background-color 0.2s;
+}
+
+.export:before {
+	font-size: 12pt;
+    content: "Izvezi tabelu";
+}
+
+
+button.export:hover, .export:hover, #theme-toggle:hover {
+	background-color: var(--button-hover) !important;
+}
+
+/* Controls section */
 #controls-container {
 	display: flex;
 	flex-wrap: wrap;
@@ -63,18 +110,24 @@ h1 {
 	align-items: flex-end;
 }
 
-.dropdown-container {
-	flex: 1;
-	min-width: 200px;
+/* Dropdowns */
+.dropdown-containers {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	gap: 15px;
 }
 
-.dropdown-container label {
+.dropdown-containers * {
+	flex: 1;
+}
+
+.dropdown-containers label {
 	display: block;
-	margin-bottom: 8px;
 	font-weight: 500;
 }
 
-/* Style Dash dropdowns */
+/* Dash dropdown styles */
 .Select-control {
 	background-color: var(--dropdown-bg) !important;
 	border-color: var(--border-color) !important;
@@ -104,31 +157,41 @@ h1 {
 	opacity: 0.7;
 }
 
-/* Theme toggle button */
-.theme-toggle-container {
-	display: flex;
-	align-items: flex-end;
+.selection-container {
+	padding: 15px 0;
 }
 
-#theme-toggle {
-	background-color: var(--button-bg);
-	color: var(--button-text);
-	border: 1px solid var(--border-color);
-	padding: 10px 15px;
-	border-radius: 4px;
-	cursor: pointer;
-	font-weight: 500;
-	transition: background-color 0.2s;
+#table-type {
+	margin-bottom: 20px;
 }
 
-#theme-toggle:hover {
-	background-color: var(--button-hover);
-}
-
-/* Graph container */
+/* Graph section */
 .graph-container {
 	background-color: var(--container-bg);
 	border-radius: 8px;
 	padding: 20px;
 	box-shadow: 0 4px 6px var(--shadow-color);
 }
+
+.separator {
+	margin-bottom: 20px;
+}
+
+.plot-title {
+	text-align: center;
+}
+
+#data-table {
+	border: 1px solid var(--border-color);
+	border-radius: 8px;
+	margin-top: 20px;
+	box-shadow: 0 4px 6px var(--shadow-color);
+}
+
+#data-table * {
+	background-color: var(--container-bg);
+}
+
+/*#data-table td, tr {*/
+/*	color: var(#ff0000);*/
+/*}*/
