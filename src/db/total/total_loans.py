@@ -1,5 +1,5 @@
 from sqlalchemy import UniqueConstraint, Integer, Enum
-from sqlalchemy.orm import mapped_column, Mapped
+from sqlalchemy.orm import mapped_column, Mapped, scoped_session
 
 from src.db import Base, SerializableTable, SerializableType
 

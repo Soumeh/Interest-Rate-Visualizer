@@ -68,36 +68,36 @@ async def async_main():
 				"Weighted IR on loans-New Bus.",
 				HouseholdLoans,
 			)
-			# await process_file(
-			# 	session,
-			# 	"https://www.nbs.rs/export/sites/NBS_site/documents/statistika/monetarni_sektor/SBMS_ks_4.xlsx",
-			# 	"Weighted IR on loans-New Bus.",
-			# 	NonFinancialLoans,
-			# )
-			# await process_file(
-			# 	session,
-			# 	"https://www.nbs.rs/export/sites/NBS_site/documents/statistika/monetarni_sektor/SBMS_ks_5.xls",
-			# 	"Weighted IR on deposits-New Bus",
-			# 	NonFinancialTermDepositsBySize,
-			# )
-			# await process_file(
-			# 	session,
-			# 	"https://www.nbs.rs/export/sites/NBS_site/documents/statistika/monetarni_sektor/SBMS_ks_6.xls",
-			# 	"Weigted IR on deposits-New Bus.",
-			# 	HouseholdTermDeposits,
-			# )
-			# await process_file(
-			# 	session,
-			# 	"https://www.nbs.rs/export/sites/NBS_site/documents/statistika/monetarni_sektor/SBMS_ks_7.xlsx",
-			# 	"Weghted IR on deposits-New Bus.",
-			# 	NonFinancialTermDepositsBySize,
-			# )
-			# await process_file(
-			# 	session,
-			# 	"https://www.nbs.rs/export/sites/NBS_site/documents/statistika/monetarni_sektor/SBMS18.xls",
-			# 	"Weighted IR on loans-New Bus.",
-			# 	TotalLoans,
-			# )
+			await process_file(
+				session,
+				"https://www.nbs.rs/export/sites/NBS_site/documents/statistika/monetarni_sektor/SBMS_ks_4.xlsx",
+				"Weighted IR on loans-New Bus.",
+				NonFinancialLoans,
+			)
+			await process_file(
+				session,
+				"https://www.nbs.rs/export/sites/NBS_site/documents/statistika/monetarni_sektor/SBMS_ks_5.xls",
+				"Weighted IR on deposits-New Bus",
+				NonFinancialTermDepositsBySize,
+			)
+			await process_file(
+				session,
+				"https://www.nbs.rs/export/sites/NBS_site/documents/statistika/monetarni_sektor/SBMS_ks_6.xls",
+				"Weigted IR on deposits-New Bus.",
+				HouseholdTermDeposits,
+			)
+			await process_file(
+				session,
+				"https://www.nbs.rs/export/sites/NBS_site/documents/statistika/monetarni_sektor/SBMS_ks_7.xlsx",
+				"Weghted IR on deposits-New Bus.",
+				NonFinancialTermDepositsBySize,
+			)
+			await process_file(
+				session,
+				"https://www.nbs.rs/export/sites/NBS_site/documents/statistika/monetarni_sektor/SBMS18.xls",
+				"Weighted IR on loans-New Bus.",
+				TotalLoans,
+			)
 			# await process_file(
 			# 	session,
 			# 	"https://www.nbs.rs/export/sites/NBS_site/documents/statistika/monetarni_sektor/SBMS25.xls",

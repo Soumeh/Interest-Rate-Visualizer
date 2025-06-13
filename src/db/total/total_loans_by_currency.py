@@ -2,7 +2,7 @@ from pandas import DataFrame, Series
 from sqlalchemy import UniqueConstraint, Integer, Float, ResultProxy, Enum
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import mapped_column, Mapped
+from sqlalchemy.orm import mapped_column, Mapped, Session
 
 from src.db import Base, SerializableTable, SerializableType
 
@@ -23,9 +23,7 @@ class TotalLoansByCurrency(Base, SerializableTable):
     id: Mapped[int] = mapped_column(primary_key=True)
     year: Mapped[int] = mapped_column(Integer)
     month: Mapped[int] = mapped_column(Integer)
-    purpose: Mapped[TotalLoanPurposesByCurrency] = mapped_column(
-        Enum(TotalLoanPurposesByCurrency)
-    )
+    purpose: Mapped[TotalLoanPurposesByCurrency] = mapped_column(Enum(TotalLoanPurposesByCurrency))
 
     household_total: Mapped[float] = mapped_column(Float, nullable=True)
     non_financial_total: Mapped[float] = mapped_column(Float, nullable=True)
@@ -60,7 +58,7 @@ class TotalLoansByCurrency(Base, SerializableTable):
         return await session.execute(query)
 
     @classmethod
-    async def process_frame(cls, session: AsyncSession, frame: DataFrame):
+    async def process_frame(cls, session: Session, frame: DataFrame):
         from_top, to_bottom = cls._get_start_end_points(frame)
         date_frame: DataFrame = frame.iloc[from_top:to_bottom, 0:2]
 
