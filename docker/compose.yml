@@ -1,46 +1,66 @@
 services:
-    database:
-        container_name: database
+    postgres:
+        container_name: postgres
         image: postgres:17
         environment:
-            POSTGRES_USER: ${POSTGRES_USER}
-            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-            POSTGRES_DB: ${POSTGRES_DB}
+            - POSTGRES_USER
+            - POSTGRES_PASSWORD
+            - POSTGRES_DB
+            - POSTGRES_HOST
+            - POSTGRES_PORT
         ports:
-            - "5123:5432"
+            - "5432:5432"
         volumes:
             - postgres_data:/var/lib/postgresql/data
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U postgres"]
+            interval: 10s
+            timeout: 10s
+            retries: 5
     etl:
         container_name: etl
         build:
             context: ..
             dockerfile: docker/Dockerfile-etl
+        environment:
+            - POSTGRES_USER
+            - POSTGRES_PASSWORD
+            - POSTGRES_DB
+            - POSTGRES_HOST
+            - POSTGRES_PORT
         depends_on:
-            - database
-        labels:
-            ofelia.enabled: "true"
-            ofelia.job-exec.etl.schedule: "@every 10s"
-            ofelia.job-exec.etl.command: "/bin/bash scripts/start_etl.sh"
+            postgres:
+                condition: service_healthy
+#        labels:
+#            ofelia.enabled: "true"
+#            ofelia.job-exec.etl.schedule: "@every 10s"
+#            ofelia.job-exec.etl.command: "/bin/bash scripts/start_etl.sh"
     backend:
         container_name: backend
         build:
             context: ..
             dockerfile: docker/Dockerfile-backend
+        environment:
+            - POSTGRES_USER
+            - POSTGRES_PASSWORD
+            - POSTGRES_DB
+            - POSTGRES_HOST
+            - POSTGRES_PORT
         depends_on:
-            - database
-            - etl
+            postgres:
+                condition: service_healthy
         ports:
-            - "8000:5000"
-    ofelia:
-        container_name: ofelia
-        image: mcuadros/ofelia:latest
-        restart: always
-        depends_on:
-            - database
-            - etl
-        command: daemon --docker
-        volumes:
-            - /var/run/docker.sock:/var/run/docker.sock:r
+            - "8000:8000"
+#    ofelia:
+#        container_name: ofelia
+#        image: mcuadros/ofelia:latest
+#        restart: always
+#        depends_on:
+#            - database
+#            - etl
+#        command: daemon --docker
+#        volumes:
+#            - /var/run/docker.sock:/var/run/docker.sock:r
 
 volumes:
     postgres_data:
