@@ -1,2 +1,3 @@
 #!/usr/bin/bash
-docker compose -f ./docker/compose.yml --env-file=".env" up --build
+uv export --no-hashes --format requirements-txt > requirements.txt
+docker compose --env-file=".env" up --build

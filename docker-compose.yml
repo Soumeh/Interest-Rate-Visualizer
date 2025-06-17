@@ -13,15 +13,15 @@ services:
         volumes:
             - postgres_data:/var/lib/postgresql/data
         healthcheck:
-            test: ["CMD-SHELL", "pg_isready -U postgres"]
+            test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER"]
             interval: 10s
             timeout: 10s
             retries: 5
     etl:
         container_name: etl
         build:
-            context: ..
-            dockerfile: docker/Dockerfile-etl
+            context: .
+            dockerfile: src/etl/Dockerfile
         environment:
             - POSTGRES_USER
             - POSTGRES_PASSWORD
@@ -38,8 +38,8 @@ services:
     backend:
         container_name: backend
         build:
-            context: ..
-            dockerfile: docker/Dockerfile-backend
+            context: .
+            dockerfile: src/backend/Dockerfile
         environment:
             - POSTGRES_USER
             - POSTGRES_PASSWORD
@@ -49,8 +49,10 @@ services:
         depends_on:
             postgres:
                 condition: service_healthy
+        expose:
+            - 5000
         ports:
-            - "8000:8000"
+            - "5000:5000"
 #    ofelia:
 #        container_name: ofelia
 #        image: mcuadros/ofelia:latest
