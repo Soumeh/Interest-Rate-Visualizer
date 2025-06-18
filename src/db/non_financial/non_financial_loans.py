@@ -1,4 +1,6 @@
-from pandas import DataFrame, Series
+from dash.html import Figure
+from pandas import DataFrame, Series, melt
+from plotly import express
 from sqlalchemy import (
 	Float,
 	Enum,
@@ -134,4 +136,32 @@ class NonFinancialLoans(Base, SerializableTable):
 
 	@classmethod
 	def query(cls, session: scoped_session):
-		return session.query(cls, LocalInterestRates, ForeignInterestRates).join(LocalInterestRates).join(ForeignInterestRates)
+		return (
+			session.query(cls, LocalInterestRates, ForeignInterestRates)
+			.join(LocalInterestRates)
+			.join(ForeignInterestRates)
+		)
+
+	def to_express(self, data: DataFrame, theme: str) -> Figure:
+		columns = ["local_rates.total_local", "foreign_rates.total_foreign", "total"]
+		labels = {
+			"local_rates.total_local": "Ukupno lokalno",
+			"foreign_rates.total_foreign": "Ukupno strano",
+			"total": "Ukupno",
+		}
+		melted_df = melt(
+			data,
+			id_vars=["month_name"],
+			value_vars=columns,
+			var_name="key",
+			value_name="rate",
+		)
+		melted_df["key"] = melted_df["key"].map(labels)
+		return express.line(
+			melted_df,
+			x="month_name",
+			y="rate",
+			color="key",
+			labels={"month_name": "Mesec", "rate": "Kamatna stopa"},
+			template=theme,
+		)

@@ -18,12 +18,12 @@ from src.db.non_financial import (
     NonFinancialTermDepositsBySize,
     NonFinancialTermDepositPurposesBySize,
 )
-from src.db.total import (
-    TotalLoans,
-    TotalLoanPurposes,
-    TotalLoansByCurrency,
-    TotalLoanPurposesByCurrency,
-)
+# from src.db.total import (
+#     TotalLoans,
+#     TotalLoanPurposes,
+#     TotalLoansByCurrency,
+#     TotalLoanPurposesByCurrency,
+# )
 
 
 @dataclass
@@ -38,7 +38,6 @@ class TableType:
             None,
             id="table-purpose-dropdown",
         )
-
 
 class TableTypes(Enum):
     HOUSEHOLD_LOANS = TableType(
@@ -66,16 +65,16 @@ class TableTypes(Enum):
         NonFinancialTermDepositPurposesBySize,
         "Kamatne stope na primljene oročene depozite nefinancijskog sektora, po veličini preduzeća",
     )
-    TOTAL_LOANS = TableType(
-        TotalLoans,
-        TotalLoanPurposes,
-        "Kamatne stope odobrene stanovništvu i nefinancijskom sektoru",
-    )
-    TOTAL_LOANS_BY_CURRENCY = TableType(
-        TotalLoansByCurrency,
-        TotalLoanPurposesByCurrency,
-        "Kamatne stope odobrene stanovništvu i nefinancijskom sektoru, po valutama",
-    )
+    # TOTAL_LOANS = TableType(
+    #     TotalLoans,
+    #     TotalLoanPurposes,
+    #     "Kamatne stope odobrene stanovništvu i nefinancijskom sektoru",
+    # )
+    # TOTAL_LOANS_BY_CURRENCY = TableType(
+    #     TotalLoansByCurrency,
+    #     TotalLoanPurposesByCurrency,
+    #     "Kamatne stope odobrene stanovništvu i nefinancijskom sektoru, po valutama",
+    # )
 
     @classmethod
     def get_dropdown(cls):

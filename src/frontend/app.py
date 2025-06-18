@@ -152,13 +152,7 @@ def create_dash(server: Flask, db: SQLAlchemy):
         table_data = data.to_dict("records")
 
         data["month_name"] = data["month"].map(MONTH_NAMES)
-        figure = plotly.express.bar(
-            data,
-            x="month_name",
-            y="total",
-            labels={"month_name": "Mesec", "total": "Ukupno"},
-            template=theme,
-        )
+        figure = table.to_express(table, data, theme)
         figure.add_annotation(
             x=0,
             y=-0.1,

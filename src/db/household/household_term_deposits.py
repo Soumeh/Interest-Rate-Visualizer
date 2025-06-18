@@ -1,4 +1,6 @@
-from pandas import DataFrame, Series
+from dash.html import Figure
+from pandas import DataFrame, Series, melt
+from plotly import express
 from sqlalchemy import (
 	Float,
 	Enum,
@@ -9,7 +11,12 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import mapped_column, Mapped, relationship, scoped_session
+from sqlalchemy.orm import (
+    mapped_column,
+    Mapped,
+    relationship,
+    scoped_session,
+)
 
 from src.db import (
 	or_none,
@@ -27,7 +34,6 @@ class HouseholdTermDepositPurposes(SerializableType):
 	ONE_UP_TO_TWO = "Oročeni depoziti preko 1 do 2 godine"
 	OVER_TWO = "Oročeni depoziti preko 2 godine"
 
-
 class HouseholdTermDeposits(Base, SerializableTable):
 	__tablename__ = "household_term_deposits"
 	__table_args__ = (UniqueConstraint("purpose", "year", "month"),)
@@ -37,10 +43,18 @@ class HouseholdTermDeposits(Base, SerializableTable):
 	month: Mapped[int] = mapped_column(Integer)
 	purpose: Mapped[HouseholdTermDepositPurposes] = mapped_column(Enum(HouseholdTermDepositPurposes))
 
-	local_rates_id: Mapped[int] = mapped_column(Integer, ForeignKey("local_interest_rates.id"), nullable=True)
-	foreign_rates_id: Mapped[int] = mapped_column(Integer, ForeignKey("foreign_interest_rates.id"), nullable=True)
-	local_rates: Mapped[LocalInterestRates] = relationship("LocalInterestRates", foreign_keys=[local_rates_id])
-	foreign_rates: Mapped[ForeignInterestRates] = relationship("ForeignInterestRates", foreign_keys=[foreign_rates_id])
+	local_rates_id: Mapped[int] = mapped_column(
+		Integer, ForeignKey("local_interest_rates.id"), nullable=True
+	)
+	foreign_rates_id: Mapped[int] = mapped_column(
+		Integer, ForeignKey("foreign_interest_rates.id"), nullable=True
+	)
+	local_rates: Mapped[LocalInterestRates] = relationship(
+		"LocalInterestRates", foreign_keys=[local_rates_id], lazy="joined"
+	)
+	foreign_rates: Mapped[ForeignInterestRates] = relationship(
+		"ForeignInterestRates", foreign_keys=[foreign_rates_id], lazy="joined"
+	)
 
 	total: Mapped[float] = mapped_column(Float, nullable=True)
 
@@ -109,4 +123,33 @@ class HouseholdTermDeposits(Base, SerializableTable):
 
 	@classmethod
 	def query(cls, session: scoped_session):
-		return session.query(cls, LocalInterestRates, ForeignInterestRates).join(LocalInterestRates).join(ForeignInterestRates)
+		return (
+			session.query(cls, LocalInterestRates, ForeignInterestRates)
+			.join(LocalInterestRates)
+			.join(ForeignInterestRates)
+		)
+
+	def to_express(self, data: DataFrame, theme: str) -> Figure:
+		print(data)
+		columns = ["local_rates.total_local", "foreign_rates.total_foreign", "total"]
+		labels = {
+			"local_rates.total_local": "Ukupno lokalno",
+			"foreign_rates.total_foreign": "Ukupno strano",
+			"total": "Ukupno",
+		}
+		melted_df = melt(
+			data,
+			id_vars=["month_name"],
+			value_vars=columns,
+			var_name="key",
+			value_name="rate",
+		)
+		melted_df["key"] = melted_df["key"].map(labels)
+		return express.line(
+			melted_df,
+			x="month_name",
+			y="rate",
+			color="key",
+			labels={"month_name": "Mesec", "rate": "Kamatna stopa"},
+			template=theme,
+		)
