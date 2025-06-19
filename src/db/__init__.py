@@ -230,7 +230,6 @@ class EnterpriseInterestRates(Base, SerializableTable):
     up_to_one: Mapped[float] = mapped_column(Float, nullable=True)
     one_up_to_two: Mapped[float] = mapped_column(Float, nullable=True)
     over_two: Mapped[float] = mapped_column(Float, nullable=True)
-    total_enterprise: Mapped[float] = mapped_column(Float, nullable=True)
 
     @classmethod
     async def insert(
@@ -242,7 +241,6 @@ class EnterpriseInterestRates(Base, SerializableTable):
                 up_to_one=or_none(row.iloc[0]),
                 one_up_to_two=or_none(row.iloc[1]),
                 over_two=or_none(row.iloc[2]),
-                total_enterprise=or_none(row.iloc[3]),
             )
             .on_conflict_do_nothing()
         )

@@ -54,8 +54,8 @@ class NonFinancialTermDepositsBySize(Base, SerializableTable):
         EnterpriseInterestRates, foreign_keys=[foreign_enterprise_interest_rates_id]
     )
 
-    total_local: Mapped[float] = mapped_column(Float, nullable=True)
-    total_foreign: Mapped[float] = mapped_column(Float, nullable=True)
+    local_total: Mapped[float] = mapped_column(Float, nullable=True)
+    foreign_total: Mapped[float] = mapped_column(Float, nullable=True)
 
     @classmethod
     async def insert(
@@ -84,21 +84,20 @@ class NonFinancialTermDepositsBySize(Base, SerializableTable):
             return await session.execute(query)
 
         local_enterprise_interest_rates: ResultProxy = (
-            await EnterpriseInterestRates.insert(session, row.iloc[0:4])
+            await EnterpriseInterestRates.insert(session, row.iloc[0:3])
         )
         local_enterprise_interest_rates_id = (
             local_enterprise_interest_rates.inserted_primary_key[0]
         )
-        local_total = or_none(row.iloc[4])
+        local_total = or_none(row.iloc[3])
 
         foreign_enterprise_interest_rates: ResultProxy = (
-            await EnterpriseInterestRates.insert(session, row.iloc[4:9])
+            await EnterpriseInterestRates.insert(session, row.iloc[4:7])
         )
         foreign_enterprise_interest_rates_id = (
             foreign_enterprise_interest_rates.inserted_primary_key[0]
         )
-
-        foreign_total = or_none(row.iloc[9])
+        foreign_total = or_none(row.iloc[7])
 
         query = (
             insert(cls)
@@ -120,8 +119,8 @@ class NonFinancialTermDepositsBySize(Base, SerializableTable):
         from_top, from_bottom = cls._get_start_end_points(frame)
         date_frame: DataFrame = frame.iloc[from_top:from_bottom, 0:2]
 
-        local_micro_data = frame.iloc[from_top:from_bottom, 2:7]
-        foreign_micro_data = frame.iloc[from_top:from_bottom, 19:24]
+        local_micro_data = frame.iloc[from_top:from_bottom, 2:6]
+        foreign_micro_data = frame.iloc[from_top:from_bottom, 19:23]
         micro_data = concat([local_micro_data, foreign_micro_data], axis=1)
         await cls._process_rows(
             session, date_frame, micro_data, NonFinancialTermDepositPurposesBySize.MICRO
@@ -138,10 +137,7 @@ class NonFinancialTermDepositsBySize(Base, SerializableTable):
         foreign_medium_data = frame.iloc[from_top:from_bottom, 27:31]
         medium_data = concat([local_medium_data, foreign_medium_data], axis=1)
         await cls._process_rows(
-            session,
-            date_frame,
-            medium_data,
-            NonFinancialTermDepositPurposesBySize.MEDIUM,
+            session, date_frame, medium_data, NonFinancialTermDepositPurposesBySize.MEDIUM
         )
 
         local_large_data = frame.iloc[from_top:from_bottom, 14:18]
@@ -164,18 +160,12 @@ class NonFinancialTermDepositsBySize(Base, SerializableTable):
 
     def to_express(self, data: DataFrame, theme: str) -> Figure:
         columns = [
-            # "local_enterprise_interest_rates.total_enterprise",
-            # "foreign_enterprise_interest_rates.total_enterprise",
-            # "total",
-            "total_local",
-            "total_foreign",
+            "local_total",
+            "foreign_total",
         ]
         labels = {
-            "total_local": "Ukupno lokalno",
-            "total_foreign": "Ukupno strano",
-            # "local_enterprise_interest_rates.total_enterprise": "Ukupno lokalno",
-            # "foreign_enterprise_interest_rates.total_enterprise": "Ukupno strano",
-            # "total": "Ukupno",
+            "local_total": "Ukupno lokalno",
+            "foreign_total": "Ukupno strano",
         }
         melted_df = melt(
             data,
