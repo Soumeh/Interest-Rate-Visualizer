@@ -13,45 +13,39 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import mapped_column, Mapped, relationship, scoped_session
 
-from src.db import (
-    or_none,
-    Base,
-    SerializableTable,
-    SerializableType,
-    EnterpriseInterestRates,
-)
+from src.db import or_none, Base, SerializableTable, SerializableType
+from src.db.generic import LocalInterestRateMaturity, ForeignInterestRateMaturity
 
 
 class NonFinancialTermDepositPurposesBySize(SerializableType):
+    TOTAL = "Ukupno"
     MICRO = "Mirko Preduzeće"
     SMALL = "Malo Preduzeće"
     MEDIUM = "Srednje Preduzeće"
     LARGE = "Veliko Preduzeće"
-    TOTAL = "Ukupno"
 
 class NonFinancialTermDepositsBySize(Base, SerializableTable):
     __tablename__ = "non_financial_term_deposits_by_size"
     __table_args__ = (UniqueConstraint("purpose", "year", "month"),)
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
     year: Mapped[int] = mapped_column(Integer)
     month: Mapped[int] = mapped_column(Integer)
     purpose: Mapped[NonFinancialTermDepositPurposesBySize] = mapped_column(
         Enum(NonFinancialTermDepositPurposesBySize)
     )
 
-    local_enterprise_interest_rates_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("enterprise_interest_rates.id"), nullable=True
+    local_interest_rate_maturity_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("local_interest_rate_maturity.id"), nullable=True
     )
-    foreign_enterprise_interest_rates_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("enterprise_interest_rates.id"), nullable=True
+    foreign_interest_rate_maturity_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("foreign_interest_rate_maturity.id"), nullable=True
     )
-
-    local_enterprise_interest_rates: Mapped[EnterpriseInterestRates] = relationship(
-        EnterpriseInterestRates, foreign_keys=[local_enterprise_interest_rates_id]
+    local_interest_rate_maturity: Mapped[LocalInterestRateMaturity] = relationship(
+        LocalInterestRateMaturity, foreign_keys=[local_interest_rate_maturity_id], lazy="joined"
     )
-    foreign_enterprise_interest_rates: Mapped[EnterpriseInterestRates] = relationship(
-        EnterpriseInterestRates, foreign_keys=[foreign_enterprise_interest_rates_id]
+    foreign_interest_rate_maturity: Mapped[ForeignInterestRateMaturity] = relationship(
+        ForeignInterestRateMaturity, foreign_keys=[foreign_interest_rate_maturity_id], lazy="joined"
     )
 
     local_total: Mapped[float] = mapped_column(Float, nullable=True)
@@ -74,8 +68,8 @@ class NonFinancialTermDepositsBySize(Base, SerializableTable):
                     purpose=purpose.name,
                     year=year,
                     month=month,
-                    local_enterprise_interest_rates_id=None,
-                    foreign_enterprise_interest_rates_id=None,
+                    local_interest_rate_maturity_id=None,
+                    foreign_interest_rate_maturity_id=None,
                     local_total=or_none(row.iloc[0]),
                     foreign_total=or_none(row.iloc[1]),
                 )
@@ -83,19 +77,19 @@ class NonFinancialTermDepositsBySize(Base, SerializableTable):
             )
             return await session.execute(query)
 
-        local_enterprise_interest_rates: ResultProxy = (
-            await EnterpriseInterestRates.insert(session, row.iloc[0:3])
+        local_interest_rate_maturity: ResultProxy = (
+            await LocalInterestRateMaturity.insert(session, row.iloc[0:3])
         )
-        local_enterprise_interest_rates_id = (
-            local_enterprise_interest_rates.inserted_primary_key[0]
+        local_interest_rate_maturity_id = (
+            local_interest_rate_maturity.inserted_primary_key[0]
         )
         local_total = or_none(row.iloc[3])
 
-        foreign_enterprise_interest_rates: ResultProxy = (
-            await EnterpriseInterestRates.insert(session, row.iloc[4:7])
+        foreign_interest_rate_maturity: ResultProxy = (
+            await ForeignInterestRateMaturity.insert(session, row.iloc[4:7])
         )
-        foreign_enterprise_interest_rates_id = (
-            foreign_enterprise_interest_rates.inserted_primary_key[0]
+        foreign_interest_rate_maturity_id = (
+            foreign_interest_rate_maturity.inserted_primary_key[0]
         )
         foreign_total = or_none(row.iloc[7])
 
@@ -105,8 +99,8 @@ class NonFinancialTermDepositsBySize(Base, SerializableTable):
                 purpose=purpose.name,
                 year=year,
                 month=month,
-                local_enterprise_interest_rates_id=local_enterprise_interest_rates_id,
-                foreign_enterprise_interest_rates_id=foreign_enterprise_interest_rates_id,
+                local_interest_rate_maturity_id=local_interest_rate_maturity_id,
+                foreign_interest_rate_maturity_id=foreign_interest_rate_maturity_id,
                 local_total=local_total,
                 foreign_total=foreign_total,
             )
@@ -156,7 +150,11 @@ class NonFinancialTermDepositsBySize(Base, SerializableTable):
 
     @classmethod
     def query(cls, session: scoped_session):
-        return session.query(cls, EnterpriseInterestRates).join(EnterpriseInterestRates)
+        return (
+            session.query(cls, LocalInterestRateMaturity, ForeignInterestRateMaturity)
+            .join(LocalInterestRateMaturity)
+            .join(ForeignInterestRateMaturity)
+        )
 
     def to_express(self, data: DataFrame, theme: str) -> Figure:
         columns = [
@@ -183,3 +181,12 @@ class NonFinancialTermDepositsBySize(Base, SerializableTable):
             labels={"month_name": "Mesec", "rate": "Kamatna stopa"},
             template=theme,
         )
+
+    def get_columns(self):
+        return [
+            {"id": "godina", "name": "Godina"},
+            {"id": "month_name", "name": "Mesec"},
+            {"id": "local_total", "name": "Ukupno lokalno"},
+            {"id": "foreign_total", "name": "Ukupno strano"},
+            {"id": "total", "name": "Ukupno"},
+        ]

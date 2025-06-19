@@ -143,12 +143,8 @@ def create_dash(server: Flask, db: SQLAlchemy):
         month_range = FiscalSelections[fiscal_selection].value.range
 
         data = table.get_data(db.session, purpose, year_selection, month_range)
+        columns = table.get_columns(table)
 
-        columns = [
-            {"id": i, "name": i}
-            for i in data.columns
-            if i not in ["id", "type", "purpose"]
-        ]
         table_data = data.to_dict("records")
 
         data["month_name"] = data["month"].map(MONTH_NAMES)

@@ -11,21 +11,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import (
-    mapped_column,
-    Mapped,
-    relationship,
-    scoped_session,
-)
+from sqlalchemy.orm import mapped_column, Mapped, relationship, scoped_session
 
-from src.db import (
-	or_none,
-	Base,
-	SerializableTable,
-	SerializableType,
-	LocalInterestRates,
-	ForeignInterestRates,
-)
+from src.db import or_none, Base, SerializableTable, SerializableType
+from src.db.generic import LocalInterestRates, ForeignInterestRates
 
 
 class HouseholdLoanPurposes(SerializableType):
@@ -116,12 +105,18 @@ class HouseholdLoans(Base, SerializableTable):
 
 		cash_data = frame.iloc[from_top:to_bottom, 40:53]
 		await cls._process_rows(
-			session, date_frame, cash_data, HouseholdLoanPurposes.CASH_LOANS
+			session,
+			date_frame,
+			cash_data,
+			HouseholdLoanPurposes.CASH_LOANS
 		)
 
 		other_data = frame.iloc[from_top:to_bottom, 53:66]
 		await cls._process_rows(
-			session, date_frame, other_data, HouseholdLoanPurposes.OTHER_LOANS
+			session,
+			date_frame,
+			other_data,
+			HouseholdLoanPurposes.OTHER_LOANS
 		)
 
 	@classmethod
@@ -155,3 +150,12 @@ class HouseholdLoans(Base, SerializableTable):
 			labels={"month_name": "Mesec", "rate": "Kamatna stopa"},
 			template=theme,
 		)
+
+	def get_columns(self):
+		return [
+			{"id": "godina", "name": "Godina"},
+			{"id": "month_name", "name": "Mesec"},
+			{"id": "local_rates.total_local", "name": "Ukupno lokalno"},
+			{"id": "foreign_rates.total_foreign", "name": "Ukupno strano"},
+			{"id": "total", "name": "Ukupno"},
+		]

@@ -11,21 +11,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import (
-    mapped_column,
-    Mapped,
-    relationship,
-    scoped_session,
-)
+from sqlalchemy.orm import mapped_column, Mapped, relationship, scoped_session
 
-from src.db import (
-	or_none,
-	Base,
-	SerializableTable,
-	SerializableType,
-	LocalInterestRates,
-	ForeignInterestRates,
-)
+from src.db import or_none, Base, SerializableTable, SerializableType
+from src.db.generic import LocalInterestRates, ForeignInterestRates
 
 
 class HouseholdTermDepositPurposes(SerializableType):
@@ -41,7 +30,9 @@ class HouseholdTermDeposits(Base, SerializableTable):
 	id: Mapped[int] = mapped_column(primary_key=True, index=True)
 	year: Mapped[int] = mapped_column(Integer)
 	month: Mapped[int] = mapped_column(Integer)
-	purpose: Mapped[HouseholdTermDepositPurposes] = mapped_column(Enum(HouseholdTermDepositPurposes))
+	purpose: Mapped[HouseholdTermDepositPurposes] = mapped_column(
+		Enum(HouseholdTermDepositPurposes)
+	)
 
 	local_rates_id: Mapped[int] = mapped_column(
 		Integer, ForeignKey("local_interest_rates.id"), nullable=True
@@ -130,7 +121,6 @@ class HouseholdTermDeposits(Base, SerializableTable):
 		)
 
 	def to_express(self, data: DataFrame, theme: str) -> Figure:
-		print(data)
 		columns = ["local_rates.total_local", "foreign_rates.total_foreign", "total"]
 		labels = {
 			"local_rates.total_local": "Ukupno lokalno",
@@ -153,3 +143,12 @@ class HouseholdTermDeposits(Base, SerializableTable):
 			labels={"month_name": "Mesec", "rate": "Kamatna stopa"},
 			template=theme,
 		)
+
+	def get_columns(self):
+		return [
+			{"id": "godina", "name": "Godina"},
+			{"id": "month_name", "name": "Mesec"},
+			{"id": "local_rates.total_local", "name": "Ukupno lokalno"},
+			{"id": "foreign_rates.total_foreign", "name": "Ukupno strano"},
+			{"id": "total", "name": "Ukupno"},
+		]
