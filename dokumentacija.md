@@ -127,4 +127,7 @@ Za održavanje aplikacije:
 
 ## Funkcionalni Zahtevi
 - Institucionalni sektor korisnika kredita/depozita - Trenutno su dostupni samo prikazi za privredu i stanovništvo, ne ukupno.
-- Veličina preduzeća (za pravna lica) - 
+- Veličina preduzeća (za pravna lica) - Funkcioniše u skladu sa ostalim namenama.
+- Namena kredita / vrste proizvoda - Funkcioniše.
+- Valuta/indeksacija - Funkcioniše.
+- Vremenski period - Funkcioniše.
