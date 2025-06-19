@@ -2,12 +2,12 @@ from dash.html import Figure
 from pandas import DataFrame, Series, melt
 from plotly import express
 from sqlalchemy import (
-	Float,
-	Enum,
-	UniqueConstraint,
-	Integer,
-	ForeignKey,
-	ResultProxy,
+    Float,
+    Enum,
+    UniqueConstraint,
+    Integer,
+    ForeignKey,
+    ResultProxy,
 )
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,10 +18,10 @@ from src.db.generic import LocalInterestRates, ForeignInterestRates
 
 
 class NonFinancialTermDepositPurposes(SerializableType):
-	TOTAL = "Ukupno"
-	UP_TO_ONE = "Oročeni depoziti do 1 godine"
-	ONE_UP_TO_TWO = "Oročeni depoziti preko 1 do 2 godine"
-	OVER_TWO = "Oročeni depoziti preko 2 godine"
+    TOTAL = "Ukupno"
+    UP_TO_ONE = "Oročeni depoziti do 1 godine"
+    ONE_UP_TO_TWO = "Oročeni depoziti preko 1 do 2 godine"
+    OVER_TWO = "Oročeni depoziti preko 2 godine"
 
 class NonFinancialTermDeposits(Base, SerializableTable):
     __tablename__ = "non_financial_term_deposits"

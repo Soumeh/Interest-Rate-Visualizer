@@ -18,7 +18,7 @@ from src.db.generic import LocalInterestRateMaturity, ForeignInterestRateMaturit
 
 
 class NonFinancialTermDepositPurposesBySize(SerializableType):
-    TOTAL = "Ukupno"
+    # TOTAL = "Ukupno"
     MICRO = "Mirko Preduzeće"
     SMALL = "Malo Preduzeće"
     MEDIUM = "Srednje Preduzeće"
@@ -61,21 +61,28 @@ class NonFinancialTermDepositsBySize(Base, SerializableTable):
         row: DataFrame | Series,
         **extra_data,
     ) -> ResultProxy:
-        if purpose == NonFinancialTermDepositPurposesBySize.TOTAL:
-            query = (
-                insert(cls)
-                .values(
-                    purpose=purpose.name,
-                    year=year,
-                    month=month,
-                    local_interest_rate_maturity_id=None,
-                    foreign_interest_rate_maturity_id=None,
-                    local_total=or_none(row.iloc[0]),
-                    foreign_total=or_none(row.iloc[1]),
-                )
-                .on_conflict_do_nothing()
-            )
-            return await session.execute(query)
+        # if purpose == NonFinancialTermDepositPurposesBySize.TOTAL:
+        #     local_interest_rate_maturity_id = None
+        #     local_total = row.iloc[0]
+        #
+        #     foreign_interest_rate_maturity_id = None
+        #     foreign_total = row.iloc[1]
+        # else:
+        #     local_interest_rate_maturity: ResultProxy = (
+        #         await LocalInterestRateMaturity.insert(session, row.iloc[0:3])
+        #     )
+        #     local_interest_rate_maturity_id = (
+        #         local_interest_rate_maturity.inserted_primary_key[0]
+        #     )
+        #     local_total = or_none(row.iloc[3])
+        #
+        #     foreign_interest_rate_maturity: ResultProxy = (
+        #         await ForeignInterestRateMaturity.insert(session, row.iloc[4:7])
+        #     )
+        #     foreign_interest_rate_maturity_id = (
+        #         foreign_interest_rate_maturity.inserted_primary_key[0]
+        #     )
+        #     foreign_total = or_none(row.iloc[7])
 
         local_interest_rate_maturity: ResultProxy = (
             await LocalInterestRateMaturity.insert(session, row.iloc[0:3])
@@ -113,6 +120,13 @@ class NonFinancialTermDepositsBySize(Base, SerializableTable):
         from_top, from_bottom = cls._get_start_end_points(frame)
         date_frame: DataFrame = frame.iloc[from_top:from_bottom, 0:2]
 
+        # local_total = frame.iloc[from_top:from_bottom, 18:19]
+        # foreign_total = frame.iloc[from_top:from_bottom, 35:36]
+        # total_data = concat([local_total, foreign_total], axis=1)
+        # await cls._process_rows(
+        #     session, date_frame, total_data, NonFinancialTermDepositPurposesBySize.TOTAL
+        # )
+
         local_micro_data = frame.iloc[from_top:from_bottom, 2:6]
         foreign_micro_data = frame.iloc[from_top:from_bottom, 19:23]
         micro_data = concat([local_micro_data, foreign_micro_data], axis=1)
@@ -139,13 +153,6 @@ class NonFinancialTermDepositsBySize(Base, SerializableTable):
         large_data = concat([local_large_data, foreign_large_data], axis=1)
         await cls._process_rows(
             session, date_frame, large_data, NonFinancialTermDepositPurposesBySize.LARGE
-        )
-
-        local_total = frame.iloc[from_top:from_bottom, 18:19]
-        foreign_total = frame.iloc[from_top:from_bottom, 35:36]
-        total_data = concat([local_total, foreign_total], axis=1)
-        await cls._process_rows(
-            session, date_frame, total_data, NonFinancialTermDepositPurposesBySize.TOTAL
         )
 
     @classmethod

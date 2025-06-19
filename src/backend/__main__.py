@@ -18,7 +18,7 @@ db.init_app(app)
 
 create_dash(app, db)
 
-DEBUG = getenv("FLASK_DEBUG", False)
+DEBUG = getenv("FLASK_DEBUG", False).lower() in ('true', '1', 't')
 
 if __name__ == "__main__":
 	app.run(debug=DEBUG)

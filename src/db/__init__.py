@@ -97,7 +97,7 @@ class SerializableTable:
     def get_data(
             cls,
             session: scoped_session,
-            purpose: str,
+            purpose: SerializableType,
             year: int,
             month_range: range,
     ) -> DataFrame:
@@ -105,11 +105,23 @@ class SerializableTable:
 
         rows = (
             cls.query(session)
-            .where(table.c.purpose == purpose)
+            .where(table.c.purpose == purpose.name)
             .where(table.c.year == year)
             .where(table.c.month.between(month_range[0], month_range[-1]))
             .all()
         )
+
+        test = (
+            cls.query(session)
+            .all()
+        )
+
+        for a in test:
+            print(type(a[0]))
+            if str(type(a[0])) == "<class 'src.db.non_financial.non_financial_term_deposits_by_size.NonFinancialTermDepositsBySize'>":
+                print(a[0].purpose)
+        # print(test)
+        # print(test[10][0].purpose)
 
         frames = []
         for row in rows:
@@ -133,8 +145,6 @@ class SerializableTable:
     def to_dict(self) -> dict:
         data = {}
 
-        print(self.__dict__)
-
         for key, value in self.__dict__.items():
             if key.startswith("_"):
                 continue
@@ -154,8 +164,6 @@ class SerializableTable:
                     relation = value.to_frame()
                     relation_dict = { f"{key}.{k}": v for k, v in relation.to_dict("list").items() }
                     data.update(relation_dict)
-
-        print(data)
 
         return data
 
