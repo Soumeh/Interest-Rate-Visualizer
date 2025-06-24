@@ -111,18 +111,6 @@ class SerializableTable:
             .all()
         )
 
-        test = (
-            cls.query(session)
-            .all()
-        )
-
-        for a in test:
-            print(type(a[0]))
-            if str(type(a[0])) == "<class 'src.db.non_financial.non_financial_term_deposits_by_size.NonFinancialTermDepositsBySize'>":
-                print(a[0].purpose)
-        # print(test)
-        # print(test[10][0].purpose)
-
         frames = []
         for row in rows:
             if isinstance(row, Row):
