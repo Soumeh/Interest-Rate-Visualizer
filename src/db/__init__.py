@@ -178,6 +178,6 @@ class SerializableTable:
 
     def get_columns(self):
         return [
-            {"id": "godina", "name": "Godina"},
+            {"id": "year", "name": "Godina"},
             {"id": "month_name", "name": "Mesec"},
         ]

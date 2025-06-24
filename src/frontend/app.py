@@ -143,11 +143,10 @@ def create_dash(server: Flask, db: SQLAlchemy):
         month_range = FiscalSelections[fiscal_selection].value.range
 
         data = table.get_data(db.session, purpose, year_selection, month_range)
-        columns = table.get_columns(table)
-
-        table_data = data.to_dict("records")
-
         data["month_name"] = data["month"].map(MONTH_NAMES)
+
+        columns = table.get_columns(table)
+        table_data = data.to_dict("records")
         figure = table.to_express(table, data, theme)
         figure.add_annotation(
             x=0,

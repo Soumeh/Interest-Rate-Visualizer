@@ -153,7 +153,7 @@ class HouseholdLoans(Base, SerializableTable):
 
 	def get_columns(self):
 		return [
-			{"id": "godina", "name": "Godina"},
+			{"id": "year", "name": "Godina"},
 			{"id": "month_name", "name": "Mesec"},
 			{"id": "local_rates.total_local", "name": "Ukupno lokalno"},
 			{"id": "foreign_rates.total_foreign", "name": "Ukupno strano"},

@@ -191,7 +191,7 @@ class NonFinancialTermDepositsBySize(Base, SerializableTable):
 
     def get_columns(self):
         return [
-            {"id": "godina", "name": "Godina"},
+            {"id": "year", "name": "Godina"},
             {"id": "month_name", "name": "Mesec"},
             {"id": "local_total", "name": "Ukupno lokalno"},
             {"id": "foreign_total", "name": "Ukupno strano"},
