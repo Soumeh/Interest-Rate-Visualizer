@@ -20,7 +20,7 @@ def create_dash(server: Flask, db: SQLAlchemy):
                     html.Button(
                         id="theme-toggle-button",
                         className="button",
-                        children="Promeni pozadinu",
+                        children="Promeni temu",
                     ),
                 ],
             ),
