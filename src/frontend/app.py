@@ -9,11 +9,12 @@ from src.frontend.type.table_type import TableTypes
 
 def create_dash(server: Flask, db: SQLAlchemy):
     app = Dash(__name__, server=server, assets_folder="assets")
+    app.title = "NBS kamatne stope"
 
     app.layout = html.Div(
         id="main-container",
         children=[
-            html.H1(children="Banka aplikacija"),
+            html.H1(children="NBS kamatne stope"),
             html.Div(
                 className="theme-toggle-container",
                 children=[
